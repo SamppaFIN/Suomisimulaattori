@@ -147,13 +147,22 @@
         </div>
 
         <div class="stat-card">
-            <div class="stat-label">Väestö</div>
-            <div class="stat-value" id="ui-population">0</div>
+            <div class="stat-label">Väestö & Keski-ikä</div>
+            <div class="stat-value"><span id="ui-population">0</span> (<span id="ui-age">0</span> v)</div>
         </div>
 
         <div class="stat-card">
-            <div class="stat-label">Valtion Kassa</div>
+            <div class="stat-label">Valtion Kassa & Velka</div>
             <div class="stat-value" id="ui-treasury" style="color: var(--success);">0 €</div>
+            <div style="font-size: 0.7rem; color: #f85149; margin-top: 4px;">Velka: <span id="ui-debt">0</span> M€</div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-label">Talous (kk)</div>
+            <div style="font-size: 0.8rem;">
+                Tulot: <span id="ui-revenue" style="color: var(--success);">0</span> M€<br>
+                Menot: <span id="ui-expenses" style="color: #f85149;">0</span> M€
+            </div>
         </div>
 
         <div class="control-group">
@@ -348,7 +357,11 @@
                 this.taxRate = 0.05; // Historically lower
                 this.benefitAmount = 0;
                 this.stateTreasury = 100000;
+                this.stateDebt = 0;
                 this.monthlyGdp = 0;
+                this.monthlyRevenue = 0;
+                this.monthlyExpenses = 0;
+                this.avgAge = 0;
                 this.tickCount = 0;
                 this.isPaused = true;
                 this.isHistoryMode = true;
@@ -357,6 +370,7 @@
             initPopulation(generator) {
                 // Initialize with 1800 population level
                 const targetPop = Math.floor(this.maxAgents * (0.8 / 5.6));
+                let totalAge = 0;
                 for (let i = 0; i < targetPop; i++) {
                     const data = generator(i);
                     this.x[i] = data.x; this.y[i] = data.y; this.age[i] = data.age;
@@ -364,8 +378,10 @@
                     this.savings[i] = data.savings * 0.05;
                     this.health[i] = data.health; this.status[i] = data.status;
                     this.education[i] = data.education;
+                    totalAge += data.age;
                 }
                 this.agentCount = targetPop;
+                this.avgAge = totalAge / targetPop;
             }
 
             tick() {
@@ -382,6 +398,7 @@
                 let currentGdp = 0;
                 let currentTaxRevenue = 0;
                 let currentBenefitSpending = 0;
+                let totalAge = 0;
 
                 // Process active agents
                 for (let i = 0; i < this.agentCount; i++) {
@@ -392,6 +409,7 @@
                             this.resetAgent(i); 
                         }
                     }
+                    totalAge += this.age[i];
 
                     // Income (Simplified historical scaling)
                     let monthlyIncome = this.income[i];
@@ -405,6 +423,8 @@
                     }
                 }
 
+                this.avgAge = totalAge / (this.agentCount || 1);
+
                 // --- History Mode Population Growth ---
                 if (this.isHistoryMode && this.currentYear < 2024) {
                     this.handleHistoryGrowth();
@@ -412,7 +432,31 @@
                     this.isHistoryMode = false;
                 }
 
-                this.stateTreasury += (currentTaxRevenue - currentBenefitSpending) * 100;
+                // Financials (scaled 1:100)
+                this.monthlyRevenue = currentTaxRevenue * 100;
+                this.monthlyExpenses = currentBenefitSpending * 100;
+                
+                const balance = this.monthlyRevenue - this.monthlyExpenses;
+                if (balance < 0) {
+                    if (this.stateTreasury > 0) {
+                        this.stateTreasury += balance;
+                        if (this.stateTreasury < 0) {
+                            this.stateDebt += Math.abs(this.stateTreasury);
+                            this.stateTreasury = 0;
+                        }
+                    } else {
+                        this.stateDebt += Math.abs(balance);
+                    }
+                } else {
+                    this.stateTreasury += balance;
+                    // Try to pay back debt
+                    if (this.stateDebt > 0) {
+                        const payment = Math.min(this.stateDebt, this.stateTreasury * 0.1);
+                        this.stateDebt -= payment;
+                        this.stateTreasury -= payment;
+                    }
+                }
+
                 this.monthlyGdp = currentGdp * 100;
                 
                 return performance.now() - start;
@@ -473,7 +517,10 @@
         const view = { x: 0, y: 0, zoom: 0.5, isDragging: false, lastMouse: { x: 0, y: 0 } };
 
         const uiPop = document.getElementById('ui-population');
-        const uiGdp = null; // Removed from HTML earlier
+        const uiAge = document.getElementById('ui-age');
+        const uiRevenue = document.getElementById('ui-revenue');
+        const uiExpenses = document.getElementById('ui-expenses');
+        const uiDebt = document.getElementById('ui-debt');
         const uiTreasury = document.getElementById('ui-treasury');
         const uiYear = document.getElementById('ui-year');
         const uiEra = document.getElementById('ui-era');
@@ -613,12 +660,17 @@
             uiYear.innerText = engine.currentYear;
             uiEra.innerText = engine.eraName;
             
-            // Update Progress Bar (1800-2024 range)
+            // Update Progress Bar
             const progress = Math.min(100, Math.max(0, (engine.currentYear - 1800) / (2024 - 1800) * 100));
             uiProgress.style.width = `${progress}%`;
-            if (engine.currentYear >= 2024) uiProgress.style.background = '#238636'; // Success green for future
+            if (engine.currentYear >= 2024) uiProgress.style.background = '#238636';
 
             uiPop.innerText = (engine.agentCount * 100).toLocaleString();
+            uiAge.innerText = engine.avgAge.toFixed(1);
+            uiRevenue.innerText = (engine.monthlyRevenue / 1000000).toFixed(1);
+            uiExpenses.innerText = (engine.monthlyExpenses / 1000000).toFixed(1);
+            uiDebt.innerText = (engine.stateDebt / 1000000).toFixed(0);
+
             uiTreasury.innerText = (engine.stateTreasury / 1000000).toFixed(0) + " M€";
             uiTreasury.style.color = engine.stateTreasury > 0 ? 'var(--success)' : '#f85149';
             requestAnimationFrame(loop);
