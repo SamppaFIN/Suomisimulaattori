@@ -132,14 +132,28 @@
         </div>
         <p class="subtitle">Yhteiskuntasimulaatio 1.0</p>
 
+        <div class="stat-card" style="border-left: 4px solid var(--accent);">
+            <div class="stat-label">Vuosi & Aikakausi</div>
+            <div class="stat-value" id="ui-year" style="font-size: 1.5rem;">1800</div>
+            <div style="font-size: 0.7rem; color: var(--accent); margin-top: 4px; font-weight: 600;" id="ui-era">Suuriruhtinaskunta</div>
+            <!-- Progress Bar for Timeline -->
+            <div style="width: 100%; height: 4px; background: rgba(255,255,255,0.1); border-radius: 2px; margin-top: 10px; overflow: hidden;">
+                <div id="ui-progress" style="width: 0%; height: 100%; background: var(--accent); transition: width 0.3s;"></div>
+            </div>
+            <div style="display: flex; justify-content: space-between; font-size: 0.6rem; color: var(--text-dim); margin-top: 4px;">
+                <span>1800</span>
+                <span>2024</span>
+            </div>
+        </div>
+
         <div class="stat-card">
             <div class="stat-label">Väestö</div>
             <div class="stat-value" id="ui-population">0</div>
         </div>
 
         <div class="stat-card">
-            <div class="stat-label">GDP /kk</div>
-            <div class="stat-value" id="ui-gdp">0 €</div>
+            <div class="stat-label">Valtion Kassa</div>
+            <div class="stat-value" id="ui-treasury" style="color: var(--success);">0 €</div>
         </div>
 
         <div class="control-group">
@@ -173,50 +187,75 @@
         const MAX_AGENTS_FULL = 5500000;
         const SCALING_FACTOR_LOCAL = 0.01; 
 
-        // Ultra-Precision Finland Outline (Final refinement)
-        const FINLAND_POINTS = [
-            [150, 20], [185, 12], [225, 35], [260, 50], [285, 80], [305, 120], 
-            [325, 170], [350, 210], [365, 260], [350, 310], [340, 360], [365, 410],
-            [375, 470], [405, 530], [440, 580], [465, 650], [485, 730], [500, 810],
-            [480, 890], [420, 950], [350, 985], [270, 998], [190, 995], [130, 980],
-            [90, 960], [65, 935], [75, 890], [105, 855], [140, 810], [175, 760],
-            [190, 710], [180, 660], [160, 610], [140, 550], [125, 490], [115, 430],
-            [105, 370], [90, 310], [65, 260], [45, 210], [25, 150], [15, 100],
-            [45, 85], [80, 100], [120, 125], [165, 155], [195, 125], [215, 75], [220, 30]
-        ];
-
-        const HOTSPOTS = [
-            { x: 260, y: 975, weight: 0.38, name: 'Helsinki', radius: 45 },
-            { x: 205, y: 885, weight: 0.12, name: 'Tampere', radius: 35 },
-            { x: 135, y: 945, weight: 0.10, name: 'Turku', radius: 35 },
-            { x: 275, y: 565, weight: 0.08, name: 'Oulu', radius: 35 },
-            { x: 375, y: 765, weight: 0.05, name: 'Kuopio', radius: 30 },
-            { x: 235, y: 795, weight: 0.06, name: 'Jyväskylä', radius: 30 },
-            { x: 325, y: 865, weight: 0.04, name: 'Lahti', radius: 25 },
-            { x: 285, y: 265, weight: 0.02, name: 'Rovaniemi', radius: 25 },
-            { x: 440, y: 810, weight: 0.03, name: 'Lappeenranta', radius: 20 },
-            { x: 135, y: 445, weight: 0.02, name: 'Vaasa', radius: 20 },
-            { x: 80, y: 945, weight: 0.01, name: 'Maarianhamina', radius: 15 }
-        ];
-
         // Background Image Support
         const mapImg = new Image();
-        mapImg.src = 'map.png'; // User should save their image as map.png
+        mapImg.src = 'map.png';
         let mapLoaded = false;
-        mapImg.onload = () => { mapLoaded = true; if(!isRunning) render(); };
+        const maskCanvas = document.createElement('canvas');
+        const maskCtx = maskCanvas.getContext('2d', { willReadFrequently: true });
 
-        function isPointInPolygon(point, polygon) {
-            const x = point[0], y = point[1];
-            let inside = false;
-            for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
-                const xi = polygon[i][0], yi = polygon[i][1];
-                const xj = polygon[j][0], yj = polygon[j][1];
-                const intersect = ((yi > y) !== (yj > y)) &&
-                    (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
-                if (intersect) inside = !inside;
-            }
-            return inside;
+        // Standard World Size for Finland
+        const WORLD_W = 600;
+        const WORLD_H = 1200;
+
+        // Convert relative Gemini coordinates (0-100) to World coordinates
+        // Note: Gemini Y=100 is North, World Y=0 is North.
+        const relPoints = [
+            [57.21, 99.15], [50.70, 95.73], [46.51, 84.62], [43.26, 86.75], [37.21, 85.90],
+            [33.95, 91.45], [30.70, 89.74], [41.86, 78.63], [41.86, 63.25], [50.23, 50.85],
+            [38.14, 40.17], [36.28, 35.04], [32.56, 34.19], [30.23, 29.06], [32.56, 19.23],
+            [30.70, 9.40], [36.28, 8.12], [35.81, 14.70], [38.14, 6.41], [39.07, 2.99],
+            [61.86, 9.40], [78.14, 32.48], [70.23, 40.17], [72.56, 44.02], [67.44, 51.28],
+            [68.84, 59.40], [63.26, 69.66], [66.51, 77.35], [60.47, 82.48], [62.33, 94.87]
+        ];
+        const FINLAND_POINTS = relPoints.map(p => [
+            p[0] * (WORLD_W / 100),
+            (100 - p[1]) * (WORLD_H / 100)
+        ]);
+
+        mapImg.onload = () => {
+            mapLoaded = true;
+            maskCanvas.width = WORLD_W; 
+            maskCanvas.height = WORLD_H;
+            maskCtx.drawImage(mapImg, 0, 0, WORLD_W, WORLD_H);
+            
+            engine.initPopulation(generateSim);
+            uiPop.innerText = (engine.agentCount * 100).toLocaleString();
+            
+            // Initial view setup
+            const rect = canvas.getBoundingClientRect();
+            view.zoom = Math.min(rect.width / WORLD_W, rect.height / WORLD_H) * 0.85;
+            view.x = rect.width / 2 - (WORLD_W / 2 * view.zoom);
+            view.y = rect.height / 2 - (WORLD_H / 2 * view.zoom);
+            
+            render();
+            // Force a second render after a tiny delay to ensure PNG is displayed
+            setTimeout(() => { render(); }, 100);
+        };
+
+        function isInsideMask(x, y) {
+            if (!mapLoaded) return true; 
+            const ix = Math.floor(x);
+            const iy = Math.floor(y);
+            if (ix < 0 || ix >= WORLD_W || iy < 0 || iy >= WORLD_H) return false;
+            
+            const pixel = maskCtx.getImageData(ix, iy, 1, 1).data;
+            return pixel[0] > 50 || pixel[1] > 50 || pixel[2] > 50; // Lower threshold
         }
+
+        const HOTSPOTS = [
+            { x: 230, y: 1120, weight: 0.38, name: 'Helsinki', radius: 60 },
+            { x: 230, y: 1040, weight: 0.12, name: 'Tampere', radius: 50 },
+            { x: 195, y: 970, weight: 0.10, name: 'Turku', radius: 50 },
+            { x: 300, y: 590, weight: 0.08, name: 'Oulu', radius: 50 },
+            { x: 420, y: 840, weight: 0.05, name: 'Kuopio', radius: 40 },
+            { x: 320, y: 860, weight: 0.06, name: 'Jyväskylä', radius: 40 },
+            { x: 360, y: 960, weight: 0.04, name: 'Lahti', radius: 30 },
+            { x: 340, y: 250, weight: 0.02, name: 'Rovaniemi', radius: 30 },
+            { x: 480, y: 950, weight: 0.03, name: 'Lappeenranta', radius: 25 },
+            { x: 230, y: 720, weight: 0.02, name: 'Vaasa', radius: 25 },
+            { x: 180, y: 970, weight: 0.01, name: 'Maarianhamina', radius: 20 }
+        ];
 
         // Gaussian random helper for natural-looking clusters
         function gaussianRandom(mean, stdev) {
@@ -242,25 +281,22 @@
                 }
             }
 
-            while (!isValid && attempts < 50) {
+            while (!isValid && attempts < 200) {
                 attempts++;
-                if (h && Math.random() < 0.85) {
-                    // Sample near hotspot with Gaussian distribution
-                    x = gaussianRandom(h.x, h.radius * 0.5);
-                    y = gaussianRandom(h.y, h.radius * 0.5);
+                if (h && Math.random() < 0.9) {
+                    x = gaussianRandom(h.x, h.radius * 0.6);
+                    y = gaussianRandom(h.y, h.radius * 0.6);
                 } else {
-                    // Random point in bounding box
-                    x = Math.random() * 500;
-                    y = Math.random() * 1000;
+                    x = Math.random() * WORLD_W;
+                    y = Math.random() * WORLD_H;
                 }
 
-                if (isPointInPolygon([x, y], FINLAND_POINTS)) {
+                if (isInsideMask(x, y)) {
                     isValid = true;
                 }
             }
             
-            // If still not valid after max attempts, force inside a known safe zone (Helsinki)
-            if (!isValid) { x = 235; y = 975; }
+            if (!isValid) { x = 300; y = 1160; }
             let age;
             const r = Math.random();
             if (r < 0.20) age = Math.floor(Math.random() * 20);
@@ -281,12 +317,23 @@
             return { x, y, age, income, savings: Math.random() * 5000 + (age * 100), health: 100 - Math.max(0, age - 50), status, education };
         }
 
+        const HISTORICAL_DATA = [
+            { year: 1800, pop: 0.8, gdpMul: 0.05, status: "Autonomian aika alkaa" },
+            { year: 1860, pop: 1.7, gdpMul: 0.10, status: "Nälkävuodet / Teollistuminen alkaa" },
+            { year: 1900, pop: 2.6, gdpMul: 0.20, status: "Sortokaudet / Kansallinen herääminen" },
+            { year: 1917, pop: 3.1, gdpMul: 0.25, status: "Itsenäistyminen" },
+            { year: 1945, pop: 3.8, gdpMul: 0.35, status: "Jälleenrakennus" },
+            { year: 1970, pop: 4.6, gdpMul: 0.60, status: "Hyvinvointivaltion rakennus" },
+            { year: 1995, pop: 5.1, gdpMul: 0.85, status: "Nokia-buumi / EU-jäsenyys" },
+            { year: 2024, pop: 5.6, gdpMul: 1.00, status: "Nykyhetki" }
+        ];
+
         class SimulationEngine {
             constructor(isLightweight = true) {
                 this.isLightweight = isLightweight;
                 this.maxAgents = isLightweight ? Math.floor(MAX_AGENTS_FULL * SCALING_FACTOR_LOCAL) : MAX_AGENTS_FULL;
                 this.agentCount = 0;
-                this.buffer = new ArrayBuffer(this.maxAgents * 32);
+                this.buffer = new ArrayBuffer(this.maxAgents * 40); 
                 this.x = new Float32Array(this.buffer, 0, this.maxAgents);
                 this.y = new Float32Array(this.buffer, this.maxAgents * 4, this.maxAgents);
                 this.age = new Uint8Array(this.buffer, this.maxAgents * 8, this.maxAgents);
@@ -295,28 +342,125 @@
                 this.health = new Uint8Array(this.buffer, this.maxAgents * 17, this.maxAgents);
                 this.status = new Uint8Array(this.buffer, this.maxAgents * 18, this.maxAgents);
                 this.education = new Uint8Array(this.buffer, this.maxAgents * 19, this.maxAgents);
+                
+                this.currentYear = 1800;
+                this.eraName = "Suuriruhtinaskunta";
+                this.taxRate = 0.05; // Historically lower
+                this.benefitAmount = 0;
+                this.stateTreasury = 100000;
+                this.monthlyGdp = 0;
                 this.tickCount = 0;
                 this.isPaused = true;
+                this.isHistoryMode = true;
             }
+
             initPopulation(generator) {
-                for (let i = 0; i < this.maxAgents; i++) {
+                // Initialize with 1800 population level
+                const targetPop = Math.floor(this.maxAgents * (0.8 / 5.6));
+                for (let i = 0; i < targetPop; i++) {
                     const data = generator(i);
                     this.x[i] = data.x; this.y[i] = data.y; this.age[i] = data.age;
-                    this.income[i] = data.income; this.savings[i] = data.savings;
+                    this.income[i] = data.income * 0.05; 
+                    this.savings[i] = data.savings * 0.05;
                     this.health[i] = data.health; this.status[i] = data.status;
                     this.education[i] = data.education;
                 }
-                this.agentCount = this.maxAgents;
+                this.agentCount = targetPop;
             }
+
             tick() {
                 if (this.isPaused) return 0;
                 const start = performance.now();
-                for (let i = 0; i < this.agentCount; i++) {
-                    if (this.tickCount % 12 === 0) this.age[i]++;
-                    if (this.status[i] === 1) this.savings[i] += this.income[i] * 0.1;
-                }
+                
+                // --- Year Progression (1 tick = 1 month) ---
                 this.tickCount++;
+                if (this.tickCount % 12 === 0) {
+                    this.currentYear++;
+                    this.updateEra();
+                }
+
+                let currentGdp = 0;
+                let currentTaxRevenue = 0;
+                let currentBenefitSpending = 0;
+
+                // Process active agents
+                for (let i = 0; i < this.agentCount; i++) {
+                    // Aging
+                    if (this.tickCount % 12 === 0) {
+                        this.age[i]++;
+                        if (this.age[i] > (this.isHistoryMode ? 60 : 80) && Math.random() < 0.05) {
+                            this.resetAgent(i); 
+                        }
+                    }
+
+                    // Income (Simplified historical scaling)
+                    let monthlyIncome = this.income[i];
+                    if (this.status[i] === 1) {
+                        const tax = monthlyIncome * this.taxRate;
+                        currentTaxRevenue += tax;
+                        this.savings[i] += (monthlyIncome - tax) * 0.05;
+                        currentGdp += monthlyIncome;
+                    } else if (this.status[i] === 2 || this.status[i] === 3) {
+                        currentBenefitSpending += this.benefitAmount;
+                    }
+                }
+
+                // --- History Mode Population Growth ---
+                if (this.isHistoryMode && this.currentYear < 2024) {
+                    this.handleHistoryGrowth();
+                } else if (this.currentYear >= 2024) {
+                    this.isHistoryMode = false;
+                }
+
+                this.stateTreasury += (currentTaxRevenue - currentBenefitSpending) * 100;
+                this.monthlyGdp = currentGdp * 100;
+                
                 return performance.now() - start;
+            }
+
+            updateEra() {
+                const era = HISTORICAL_DATA.findLast(d => d.year <= this.currentYear);
+                if (era) {
+                    this.eraName = era.status;
+                    if (this.isHistoryMode) {
+                        // Slowly increase tax and benefits as society modernizes
+                        if (this.currentYear > 1950) {
+                            this.taxRate = Math.min(0.25, 0.05 + (this.currentYear - 1950) * 0.005);
+                            this.benefitAmount = Math.min(800, (this.currentYear - 1950) * 15);
+                        }
+                    }
+                }
+            }
+
+            handleHistoryGrowth() {
+                const era = HISTORICAL_DATA.findLast(d => d.year <= this.currentYear);
+                const nextEra = HISTORICAL_DATA.find(d => d.year > this.currentYear) || era;
+                
+                // Interpolate target population
+                const t = (this.currentYear - era.year) / (nextEra.year - era.year || 1);
+                const targetPopRatio = era.pop + t * (nextEra.pop - era.pop);
+                const targetCount = Math.floor(this.maxAgents * (targetPopRatio / 5.6));
+                
+                // Add new agents to match growth
+                while (this.agentCount < targetCount && this.agentCount < this.maxAgents) {
+                    const i = this.agentCount;
+                    const data = generateSim(i);
+                    this.x[i] = data.x; this.y[i] = data.y; this.age[i] = 0;
+                    this.income[i] = data.income * era.gdpMul;
+                    this.savings[i] = 0;
+                    this.health[i] = 100;
+                    this.status[i] = 0;
+                    this.agentCount++;
+                }
+            }
+
+            resetAgent(i) {
+                this.age[i] = 0;
+                this.health[i] = 100;
+                this.savings[i] = 0;
+                this.status[i] = 0; 
+                this.education[i] = 0;
+                this.income[i] = (2000 + Math.random() * 2000) * (HISTORICAL_DATA.findLast(d => d.year <= this.currentYear).gdpMul);
             }
         }
 
@@ -329,18 +473,40 @@
         const view = { x: 0, y: 0, zoom: 0.5, isDragging: false, lastMouse: { x: 0, y: 0 } };
 
         const uiPop = document.getElementById('ui-population');
-        const uiGdp = document.getElementById('ui-gdp');
+        const uiGdp = null; // Removed from HTML earlier
+        const uiTreasury = document.getElementById('ui-treasury');
+        const uiYear = document.getElementById('ui-year');
+        const uiEra = document.getElementById('ui-era');
+        const uiProgress = document.getElementById('ui-progress');
         const uiTick = document.getElementById('ui-tick');
         const btnRun = document.getElementById('btn-run');
         const btnReset = document.getElementById('btn-reset');
+        
+        const inpTax = document.getElementById('inp-tax');
+        const valTax = document.getElementById('val-tax');
+        const inpBenefits = document.getElementById('inp-benefits');
+        const valBenefits = document.getElementById('val-benefits');
+
+        inpTax.oninput = () => {
+            engine.taxRate = inpTax.value / 100;
+            valTax.innerText = inpTax.value;
+        };
+
+        inpBenefits.oninput = () => {
+            engine.benefitAmount = parseInt(inpBenefits.value);
+            valBenefits.innerText = inpBenefits.value;
+        };
 
         function resize() {
             canvas.width = canvas.clientWidth;
             canvas.height = canvas.clientHeight;
             if (view.x === 0) {
-                view.x = canvas.width / 2 - (200 * view.zoom);
-                view.y = 20;
+                const rect = canvas.getBoundingClientRect();
+                view.zoom = Math.min(rect.width / WORLD_W, rect.height / WORLD_H) * 0.9;
+                view.x = rect.width / 2 - (WORLD_W / 2 * view.zoom);
+                view.y = rect.height / 2 - (WORLD_H / 2 * view.zoom);
             }
+            render();
         }
         window.addEventListener('resize', resize);
         resize();
@@ -362,7 +528,7 @@
             e.preventDefault();
             const oldZoom = view.zoom;
             view.zoom *= (1 + (-e.deltaY * 0.001));
-            view.zoom = Math.max(0.1, Math.min(view.zoom, 50));
+            view.zoom = Math.max(0.1, Math.min(view.zoom, 100)); 
             const rect = canvas.getBoundingClientRect();
             const mouseX = e.clientX - rect.left;
             const mouseY = e.clientY - rect.top;
@@ -378,82 +544,84 @@
         btnRun.onclick = () => {
             isRunning = !isRunning;
             engine.isPaused = !isRunning;
-            btnRun.innerText = isRunning ? 'Pysäytä' : 'Jatka Simulaatiota';
+            btnRun.innerText = isRunning ? 'Pysäytä Simulaatio' : 'Jatka Simulaatiota';
             if (isRunning) requestAnimationFrame(loop);
         };
         btnReset.onclick = () => location.reload();
 
-        function loop() {
-            if (!isRunning) return;
-            const duration = engine.tick();
-            render();
-            uiTick.innerText = `Tick: ${engine.tickCount} (${duration.toFixed(2)}ms)`;
-            let totalIncome = 0;
-            for(let i=0; i<engine.agentCount; i++) if (engine.status[i] === 1) totalIncome += engine.income[i];
-            uiGdp.innerText = (totalIncome * 100 / 1000000).toFixed(1) + " M€";
-            requestAnimationFrame(loop);
-        }
+        const btnFast = document.createElement('button');
+        btnFast.innerText = '⏩ Pikakelaa Historiaa (10x)';
+        btnFast.className = 'secondary';
+        btnFast.style.marginTop = '10px';
+        btnFast.style.borderColor = 'var(--accent)';
+        btnFast.onclick = () => {
+            engine.isFastMode = !engine.isFastMode;
+            btnFast.style.background = engine.isFastMode ? 'var(--accent)' : '';
+            btnFast.style.color = engine.isFastMode ? 'white' : '';
+            btnFast.innerText = engine.isFastMode ? '⏸ Pysäytä Pikakelaus' : '⏩ Pikakelaa Historiaa (10x)';
+        };
+        btnReset.parentNode.insertBefore(btnFast, btnReset);
 
         function render() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             
-            // Draw background image if loaded
             if (mapLoaded) {
-                // Adjust image to fit the Finland bounding box roughly
-                // World coordinates are roughly [0, 500] x [0, 1000]
-                const imgW = 500 * view.zoom;
-                const imgH = 1000 * view.zoom;
-                ctx.globalAlpha = 0.3; // Make it subtle
+                const imgW = WORLD_W * view.zoom; 
+                const imgH = WORLD_H * view.zoom;
+                ctx.globalAlpha = 0.4; 
                 ctx.drawImage(mapImg, view.x, view.y, imgW, imgH);
                 ctx.globalAlpha = 1.0;
             }
 
-            drawFinlandGuide();
-
-            // Render agents
             for (let i = 0; i < engine.agentCount; i++) {
                 const px = engine.x[i] * view.zoom + view.x;
                 const py = engine.y[i] * view.zoom + view.y;
                 if (px < -5 || px > canvas.width + 5 || py < -5 || py > canvas.height + 5) continue;
+
                 if (engine.status[i] === 0) ctx.fillStyle = '#a5d6ff';
                 else if (engine.status[i] === 2) ctx.fillStyle = '#f85149';
                 else if (engine.status[i] === 3) ctx.fillStyle = '#8b949e';
                 else ctx.fillStyle = '#58a6ff';
-                const size = view.zoom > 5 ? 2 : 1;
+
+                const size = view.zoom > 10 ? 3 : (view.zoom > 5 ? 2 : 1);
                 ctx.fillRect(px, py, size, size);
             }
-        }
 
-        function drawFinlandGuide() {
-            if (view.zoom < 0.3) return; // Too small to see
-            
-            ctx.beginPath();
-            ctx.strokeStyle = 'rgba(88, 166, 255, 0.15)';
-            ctx.lineWidth = 1 / view.zoom; // Keep line thin regardless of zoom
-            
-            // Use the polygon points
-            const startX = FINLAND_POINTS[0][0] * view.zoom + view.x;
-            const startY = FINLAND_POINTS[0][1] * view.zoom + view.y;
-            ctx.moveTo(startX, startY);
-            
-            for (let i = 1; i < FINLAND_POINTS.length; i++) {
-                const px = FINLAND_POINTS[i][0] * view.zoom + view.x;
-                const py = FINLAND_POINTS[i][1] * view.zoom + view.y;
-                ctx.lineTo(px, py);
-            }
-            ctx.closePath();
-            ctx.stroke();
-
-            // Draw city labels if zoomed in enough
-            if (view.zoom > 2) {
-                ctx.font = `${10/view.zoom}px Inter`;
-                ctx.fillStyle = 'rgba(88, 166, 255, 0.5)';
+            if (view.zoom > 1.5) {
+                const fontSize = Math.max(10, 14 / view.zoom);
+                ctx.font = `${fontSize}px Inter`;
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+                ctx.textAlign = 'left';
                 HOTSPOTS.forEach(h => {
                     const px = h.x * view.zoom + view.x;
                     const py = h.y * view.zoom + view.y;
                     ctx.fillText(h.name, px + 5, py);
                 });
             }
+        }
+
+        function loop() {
+            if (!isRunning) return;
+            const ticksPerFrame = engine.isFastMode ? 12 : 1;
+            let duration = 0;
+            for(let t=0; t < ticksPerFrame; t++) {
+                duration += engine.tick();
+            }
+            render();
+            
+            uiTick.innerText = `Tick: ${engine.tickCount} (${duration.toFixed(2)}ms)`;
+            uiYear.innerText = engine.currentYear;
+            uiEra.innerText = engine.eraName;
+            
+            // Update Progress Bar (1800-2024 range)
+            const progress = Math.min(100, Math.max(0, (engine.currentYear - 1800) / (2024 - 1800) * 100));
+            uiProgress.style.width = `${progress}%`;
+            if (engine.currentYear >= 2024) uiProgress.style.background = '#238636'; // Success green for future
+
+            uiPop.innerText = (engine.agentCount * 100).toLocaleString();
+            uiTreasury.innerText = (engine.stateTreasury / 1000000).toFixed(0) + " M€";
+            uiTreasury.style.color = engine.stateTreasury > 0 ? 'var(--success)' : '#f85149';
+            requestAnimationFrame(loop);
         }
 
         render();
