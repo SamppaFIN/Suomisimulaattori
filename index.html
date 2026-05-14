@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SuomiSimulaattori 1.0</title>
+    <title>SuomiSimulaattori 2.0</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
     <style>
@@ -69,12 +69,13 @@
             <div class="flag-container"><div class="flag-blue-v"></div><div class="flag-blue-h"></div></div>
             <h1>SUOMISIMULAATTORI</h1>
         </div>
-        <p class="subtitle">Yhteiskuntasimulaatio 1.0</p>
+        <p class="subtitle">Yhteiskuntasimulaatio 2.0</p>
 
         <div class="stat-card" style="border-left: 4px solid var(--accent);">
             <div class="stat-label">Vuosi & Aikakausi</div>
             <div class="stat-value" id="ui-year">1800</div>
             <div style="font-size: 0.7rem; color: var(--accent); font-weight: 600;" id="ui-era">Suuriruhtinaskunta</div>
+            <div style="font-size: 0.6rem; color: var(--text-dim); font-style: italic; margin-top: 2px;" id="ui-event">Ruotsin vallan loppu</div>
             <div style="width: 100%; height: 4px; background: rgba(255,255,255,0.1); border-radius: 2px; margin-top: 8px; overflow: hidden;">
                 <div id="ui-progress" style="width: 0%; height: 100%; background: var(--accent); transition: width 0.3s;"></div>
             </div>
@@ -99,14 +100,19 @@
         <div class="stat-card">
             <div class="stat-label">Valtion Kassa & Velka</div>
             <div class="stat-value" id="ui-treasury">0 €</div>
-            <div style="font-size: 0.7rem; color: #f85149;">Velka: <span id="ui-debt">0</span> M€</div>
+            <div style="font-size: 0.7rem; color: #f85149;">
+                Tulot: <span id="ui-revenue">0</span> M€ | Menot: <span id="ui-expenses">0</span> M€<br>
+                Velka: <span id="ui-debt">0</span> M€
+            </div>
         </div>
 
         <div class="stat-card">
-            <div class="stat-label">Talous (kk)</div>
-            <div style="font-size: 0.75rem;">
-                Tulot: <span id="ui-revenue" style="color: var(--success);">0</span> M€ | 
-                Menot: <span id="ui-expenses" style="color: #f85149;">0</span> M€
+            <div class="stat-label">Visualisoinnit</div>
+            <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 5px;">
+                <div style="font-size: 0.6rem; color: var(--text-dim);">Väestöpyramidi</div>
+                <canvas id="pyramidCanvas" style="width: 100%; height: 100px; background: rgba(0,0,0,0.3); border-radius: 4px;"></canvas>
+                <div style="font-size: 0.6rem; color: var(--text-dim);">Väestön kehitys (1800-2024)</div>
+                <canvas id="trendCanvas" style="width: 100%; height: 60px; background: rgba(0,0,0,0.3); border-radius: 4px;"></canvas>
             </div>
         </div>
 
@@ -129,146 +135,69 @@
     <div id="viewport">
         <canvas id="mainCanvas"></canvas>
         <div class="overlay">
-            <div class="mode-tag">Lightweight Mode (1:100)</div>
+            <div class="mode-tag">Data-Driven Mode (1:100)</div>
             <div style="font-size: 0.65rem; color: var(--text-dim); margin-top: 4px;" id="ui-tick">Pysäytetty</div>
         </div>
     </div>
 
-    <script>
-        const MAX_AGENTS_FULL = 5500000, SCALING_FACTOR = 0.01, WORLD_W = 600, WORLD_H = 1200;
+    <script type="module">
+        import { SimulationEngine } from './src/core/engine.js';
+        import { DataService } from './src/services/data_service.js';
+        import { createGenerator } from './src/systems/population_gen.js';
+
+        const WORLD_W = 600, WORLD_H = 1200;
         const mapImg = new Image(); mapImg.src = 'map.png'; let mapLoaded = false;
-        const maskCanvas = document.createElement('canvas'), maskCtx = maskCanvas.getContext('2d', { willReadFrequently: true });
+        
+        const dataService = new DataService();
+        const engine = new SimulationEngine(true);
+        engine.setDataService(dataService);
 
-        const HOTSPOTS = [
-            { x: 230, y: 1120, weight: 0.38, name: 'Helsinki', radius: 60 },
-            { x: 230, y: 1040, weight: 0.12, name: 'Tampere', radius: 50 },
-            { x: 195, y: 970, weight: 0.10, name: 'Turku', radius: 50 },
-            { x: 300, y: 590, weight: 0.08, name: 'Oulu', radius: 50 },
-            { x: 420, y: 840, weight: 0.05, name: 'Kuopio', radius: 40 },
-            { x: 320, y: 860, weight: 0.06, name: 'Jyväskylä', radius: 40 },
-            { x: 360, y: 960, weight: 0.04, name: 'Lahti', radius: 30 },
-            { x: 340, y: 250, weight: 0.02, name: 'Rovaniemi', radius: 30 },
-            { x: 480, y: 950, weight: 0.03, name: 'Lappeenranta', radius: 25 },
-            { x: 230, y: 720, weight: 0.02, name: 'Vaasa', radius: 25 },
-            { x: 180, y: 970, weight: 0.01, name: 'Maarianhamina', radius: 20 }
-        ];
-
-        const HISTORICAL_DATA = [
-            { year: 1800, pop: 0.8, gdpMul: 0.05, status: "Autonomian aika alkaa" },
-            { year: 1860, pop: 1.7, gdpMul: 0.10, status: "Nälkävuodet / Teollistuminen" },
-            { year: 1900, pop: 2.6, gdpMul: 0.20, status: "Kansallinen herääminen" },
-            { year: 1917, pop: 3.1, gdpMul: 0.25, status: "Itsenäistyminen" },
-            { year: 1945, pop: 3.8, gdpMul: 0.35, status: "Jälleenrakennus" },
-            { year: 1970, pop: 4.6, gdpMul: 0.60, status: "Hyvinvointivaltio" },
-            { year: 1995, pop: 5.1, gdpMul: 0.85, status: "Nokia-buumi / EU" },
-            { year: 2024, pop: 5.6, gdpMul: 1.00, status: "Nykyhetki" }
-        ];
-
-        function gaussianRandom(m, s) { let u = 1 - Math.random(), v = 1 - Math.random(); return (Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v)) * s + m; }
-        function isInsideMask(x, y) {
-            if (!mapLoaded) return true;
-            const ix = Math.floor(x), iy = Math.floor(y);
-            if (ix < 0 || ix >= WORLD_W || iy < 0 || iy >= WORLD_H) return false;
-            const pixel = maskCtx.getImageData(ix, iy, 1, 1).data;
-            return pixel[0] > 50 || pixel[1] > 50 || pixel[2] > 50;
-        }
-
-        function generateSim(i) {
-            let x, y, valid = false, att = 0;
-            const rh = Math.random(); let h = null, cum = 0;
-            for (let item of HOTSPOTS) { cum += item.weight; if (rh < cum) { h = item; break; } }
-            while (!valid && att < 100) {
-                att++; x = h && Math.random() < 0.9 ? gaussianRandom(h.x, h.radius * 0.6) : Math.random() * WORLD_W;
-                y = h && Math.random() < 0.9 ? gaussianRandom(h.y, h.radius * 0.6) : Math.random() * WORLD_H;
-                if (isInsideMask(x, y)) valid = true;
-            }
-            if (!valid) { x = 300; y = 1160; }
-            let age, r = Math.random();
-            if (r < 0.2) age = Math.floor(Math.random() * 20); else if (r < 0.8) age = Math.floor(Math.random() * 45) + 20; else age = Math.floor(Math.random() * 35) + 65;
-            let ed = Math.floor(Math.random() * 4), st = age < 20 ? 0 : (age > 65 ? 3 : (Math.random() < 0.08 ? 2 : 1));
-            let inc = st === 1 ? 2000 + (ed * 1000) + Math.min(age-20, 30)*50 + Math.random()*500 : (st === 2 ? 800 : 1500);
-            return { x, y, age, inc, st };
-        }
-
-        class SimulationEngine {
-            constructor() {
-                this.max = Math.floor(MAX_AGENTS_FULL * SCALING); this.count = 0;
-                this.buffer = new ArrayBuffer(this.max * 32);
-                this.x = new Float32Array(this.buffer, 0, this.max); this.y = new Float32Array(this.buffer, this.max*4, this.max);
-                this.age = new Uint8Array(this.buffer, this.max*8, this.max); this.inc = new Float32Array(this.buffer, this.max*9, this.max);
-                this.st = new Uint8Array(this.buffer, this.max*13, this.max);
-                this.year = 1800; this.era = "Suuriruhtinaskunta"; this.tax = 0.05; this.ben = 0;
-                this.treasury = 100000; this.debt = 0; this.rev = 0; this.exp = 0; this.avgAge = 0; this.tickCount = 0;
-                this.paused = true; this.history = true; this.fast = false;
-                this.classes = { child: 0, low: 0, mid: 0, high: 0, pen: 0 };
-            }
-            init(gen) {
-                this.count = Math.floor(this.max * (0.8 / 5.6)); let sumAge = 0;
-                for (let i = 0; i < this.count; i++) {
-                    const d = gen(i); this.x[i] = d.x; this.y[i] = d.y; this.age[i] = d.age; this.inc[i] = d.inc * 0.05; this.st[i] = d.st; sumAge += d.age;
-                }
-                this.avgAge = sumAge / this.count;
-            }
-            tick() {
-                if (this.paused) return 0; const start = performance.now();
-                this.tickCount++; if (this.tickCount % 12 === 0) { this.year++; this.updateEra(); }
-                let curRev = 0, curExp = 0, sumAge = 0; this.classes = { child: 0, low: 0, mid: 0, high: 0, pen: 0 };
-                for (let i = 0; i < this.count; i++) {
-                    if (this.tickCount % 12 === 0) { this.age[i]++; if (this.age[i] > (this.history ? 60 : 80) && Math.random() < 0.05) this.reset(i); }
-                    sumAge += this.age[i];
-                    if (this.age[i] < 20) this.classes.child++;
-                    else if (this.age[i] > 65) { this.classes.pen++; curExp += 1500; }
-                    else {
-                        if (this.st[i] === 1) {
-                            let tax = this.inc[i] * this.tax; curRev += tax;
-                            if (this.inc[i] < 2000) this.classes.low++; else if (this.inc[i] < 4500) this.classes.mid++; else this.classes.high++;
-                        } else { curExp += this.ben; this.classes.low++; }
-                    }
-                }
-                this.avgAge = sumAge / (this.count || 1);
-                if (this.history && this.year < 2024) this.grow(); else if (this.year >= 2024) this.history = false;
-                this.rev = curRev * 100; this.exp = curExp * 100; let bal = this.rev - this.exp;
-                if (bal < 0) { if (this.treasury > 0) { this.treasury += bal; if (this.treasury < 0) { this.debt += Math.abs(this.treasury); this.treasury = 0; } } else this.debt += Math.abs(bal); }
-                else { this.treasury += bal; if (this.debt > 0) { let p = Math.min(this.debt, this.treasury * 0.1); this.debt -= p; this.treasury -= p; } }
-                return performance.now() - start;
-            }
-            updateEra() {
-                const e = HISTORICAL_DATA.findLast(d => d.year <= this.year);
-                if (e) { this.era = e.status; if (this.history && this.year > 1950) { this.tax = Math.min(0.25, 0.05 + (this.year - 1950) * 0.005); this.ben = Math.min(800, (this.year - 1950) * 15); } }
-            }
-            grow() {
-                const e = HISTORICAL_DATA.findLast(d => d.year <= this.year), n = HISTORICAL_DATA.find(d => d.year > this.year) || e;
-                const t = (this.year - e.year) / (n.year - e.year || 1);
-                const target = Math.floor(this.max * ((e.pop + t * (n.pop - e.pop)) / 5.6));
-                while (this.count < target && this.count < this.max) {
-                    const i = this.count; const d = generateSim(i); this.x[i] = d.x; this.y[i] = d.y; this.age[i] = 0; this.inc[i] = d.inc * e.gdpMul; this.st[i] = 0; this.count++;
-                }
-            }
-            reset(i) { this.age[i] = 0; this.st[i] = 0; this.inc[i] = (2000 + Math.random()*2000) * (HISTORICAL_DATA.findLast(d => d.year <= this.year).gdpMul); }
-        }
-
-        const engine = new SimulationEngine();
         const canvas = document.getElementById('mainCanvas'), ctx = canvas.getContext('2d');
+        const pyramidCanvas = document.getElementById('pyramidCanvas'), pCtx = pyramidCanvas.getContext('2d');
+        const trendCanvas = document.getElementById('trendCanvas'), tCtx = trendCanvas.getContext('2d');
+
         const view = { x: 0, y: 0, zoom: 0.5, drag: false, lastM: { x: 0, y: 0 } };
         const ui = {
-            pop: document.getElementById('ui-population'), age: document.getElementById('ui-age'), rev: document.getElementById('ui-revenue'), exp: document.getElementById('ui-expenses'), debt: document.getElementById('ui-debt'), treasury: document.getElementById('ui-treasury'), year: document.getElementById('ui-year'), era: document.getElementById('ui-era'), prog: document.getElementById('ui-progress'), tick: document.getElementById('ui-tick'), child: document.getElementById('ui-class-child'), low: document.getElementById('ui-class-low'), mid: document.getElementById('ui-class-mid'), high: document.getElementById('ui-class-high'), pen: document.getElementById('ui-class-pensioner')
+            pop: document.getElementById('ui-population'), age: document.getElementById('ui-age'), 
+            rev: document.getElementById('ui-revenue'), exp: document.getElementById('ui-expenses'), 
+            debt: document.getElementById('ui-debt'), treasury: document.getElementById('ui-treasury'), 
+            year: document.getElementById('ui-year'), era: document.getElementById('ui-era'), 
+            prog: document.getElementById('ui-progress'), tick: document.getElementById('ui-tick'), 
+            child: document.getElementById('ui-class-child'), low: document.getElementById('ui-class-low'), 
+            mid: document.getElementById('ui-class-mid'), high: document.getElementById('ui-class-high'), 
+            pen: document.getElementById('ui-class-pensioner')
         };
-        const btnRun = document.getElementById('btn-run'), btnReset = document.getElementById('btn-reset'), inpTax = document.getElementById('inp-tax'), valTax = document.getElementById('val-tax'), inpBen = document.getElementById('inp-benefits'), valBen = document.getElementById('val-benefits');
+        const btnRun = document.getElementById('btn-run'), btnReset = document.getElementById('btn-reset'), 
+              inpTax = document.getElementById('inp-tax'), valTax = document.getElementById('val-tax'), 
+              inpBen = document.getElementById('inp-benefits'), valBen = document.getElementById('val-benefits');
 
-        inpTax.oninput = () => { engine.tax = inpTax.value / 100; valTax.innerText = inpTax.value; };
-        inpBen.oninput = () => { engine.ben = parseInt(inpBen.value); valBen.innerText = inpBen.value; };
+        inpTax.oninput = () => { engine.taxRate = inpTax.value / 100; valTax.innerText = inpTax.value; };
+        inpBen.oninput = () => { engine.benefitAmount = parseInt(inpBen.value); valBen.innerText = inpBen.value; };
+
+        await dataService.loadData();
+        const generateSim = createGenerator(dataService);
 
         mapImg.onload = () => {
-            mapLoaded = true; maskCanvas.width = WORLD_W; maskCanvas.height = WORLD_H; maskCtx.drawImage(mapImg, 0, 0, WORLD_W, WORLD_H);
-            engine.init(generateSim); resize();
+            mapLoaded = true;
+            engine.initPopulation(generateSim); 
+            resize();
         };
 
         function resize() {
             canvas.width = canvas.clientWidth; canvas.height = canvas.clientHeight;
-            if (view.x === 0) { const r = canvas.getBoundingClientRect(); view.zoom = Math.min(r.width / WORLD_W, r.height / WORLD_H) * 0.85; view.x = r.width/2 - (WORLD_W/2*view.zoom); view.y = r.height/2 - (WORLD_H/2*view.zoom); }
+            pyramidCanvas.width = pyramidCanvas.clientWidth; pyramidCanvas.height = pyramidCanvas.clientHeight;
+            trendCanvas.width = trendCanvas.clientWidth; trendCanvas.height = trendCanvas.clientHeight;
+
+            if (view.x === 0) { 
+                const r = canvas.getBoundingClientRect(); 
+                view.zoom = Math.min(r.width / WORLD_W, r.height / WORLD_H) * 0.85; 
+                view.x = r.width/2 - (WORLD_W/2*view.zoom); 
+                view.y = r.height/2 - (WORLD_H/2*view.zoom); 
+            }
             render();
         }
         window.onresize = resize;
+
         canvas.onmousedown = (e) => { view.drag = true; view.lastM = { x: e.clientX, y: e.clientY }; };
         window.onmouseup = () => view.drag = false;
         window.onmousemove = (e) => { if (view.drag) { view.x += e.clientX - view.lastM.x; view.y += e.clientY - view.lastM.y; view.lastM = { x: e.clientX, y: e.clientY }; if (!isRunning) render(); } };
@@ -280,46 +209,99 @@
         };
 
         let isRunning = false;
-        btnRun.onclick = () => { isRunning = !isRunning; engine.paused = !isRunning; btnRun.innerText = isRunning ? 'Pysäytä' : 'Jatka'; if (isRunning) requestAnimationFrame(loop); };
+        btnRun.onclick = () => { 
+            isRunning = !isRunning; engine.isPaused = !isRunning; 
+            btnRun.innerText = isRunning ? 'Pysäytä' : 'Jatka'; 
+            if (isRunning) requestAnimationFrame(loop); 
+        };
         btnReset.onclick = () => location.reload();
 
         const btnF = document.createElement('button'); btnF.innerText = '⏩ Pikakelaa (10x)'; btnF.className = 'secondary'; btnF.style.marginTop = '10px'; btnF.style.borderColor = 'var(--accent)';
-        btnF.onclick = () => { engine.fast = !engine.fast; btnF.style.background = engine.fast ? 'var(--accent)' : ''; btnF.innerText = engine.fast ? '⏸ Pysäytä Kelaus' : '⏩ Pikakelaa (10x)'; };
+        btnF.onclick = () => { engine.isFastMode = !engine.isFastMode; btnF.style.background = engine.isFastMode ? 'var(--accent)' : ''; btnF.innerText = engine.isFastMode ? '⏸ Pysäytä Kelaus' : '⏩ Pikakelaa (10x)'; };
         btnReset.parentNode.insertBefore(btnF, btnReset);
 
         function render() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             if (mapLoaded) { const w = WORLD_W * view.zoom, h = WORLD_H * view.zoom; ctx.globalAlpha = 0.4; ctx.drawImage(mapImg, view.x, view.y, w, h); ctx.globalAlpha = 1.0; }
-            for (let i = 0; i < engine.count; i++) {
+            for (let i = 0; i < engine.agentCount; i++) {
                 const px = engine.x[i] * view.zoom + view.x, py = engine.y[i] * view.zoom + view.y;
                 if (px < -5 || px > canvas.width + 5 || py < -5 || py > canvas.height + 5) continue;
-                const age = engine.age[i], inc = engine.inc[i], st = engine.st[i];
+                const age = engine.age[i], inc = engine.income[i], st = engine.status[i];
                 if (age < 20) ctx.fillStyle = '#a5d6ff'; else if (age > 65) ctx.fillStyle = '#8b949e';
                 else { if (st !== 1 || inc < 2000) ctx.fillStyle = '#f85149'; else if (inc < 4500) ctx.fillStyle = '#58a6ff'; else ctx.fillStyle = '#2ea043'; }
                 const s = view.zoom > 10 ? 3 : (view.zoom > 5 ? 2 : 1); ctx.fillRect(px, py, s, s);
             }
-            if (view.zoom > 1.5) {
-                const fs = Math.max(10, 14 / view.zoom); ctx.font = `${fs}px Inter`; ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
-                HOTSPOTS.forEach(h => { ctx.fillText(h.name, h.x * view.zoom + view.x + 5, h.y * view.zoom + view.y); });
-            }
+            
+            drawPyramid();
+            drawTrend();
+        }
+
+        function drawPyramid() {
+            pCtx.clearRect(0, 0, pyramidCanvas.width, pyramidCanvas.height);
+            const data = engine.classCounts;
+            const total = engine.agentCount || 1;
+            const groups = [data.child, (total - data.child - data.pensioner), data.pensioner];
+            const colors = ['#a5d6ff', '#58a6ff', '#8b949e'];
+            const labels = ['Lapset', 'Työikäiset', 'Eläke'];
+            
+            const barH = (pyramidCanvas.height - 20) / 3;
+            groups.forEach((count, i) => {
+                const w = Math.max(2, (count / total) * (pyramidCanvas.width - 40));
+                pCtx.fillStyle = colors[i];
+                pCtx.fillRect(20, 5 + i * (barH + 5), w, barH);
+                pCtx.fillStyle = 'white';
+                pCtx.font = '8px Inter';
+                pCtx.fillText(labels[i], 25, 15 + i * (barH + 5));
+            });
+        }
+
+        function drawTrend() {
+            tCtx.clearRect(0, 0, trendCanvas.width, trendCanvas.height);
+            if (!dataService.data) return;
+            const hist = dataService.data.historical_population;
+            const maxPop = 6000000;
+            tCtx.beginPath();
+            tCtx.strokeStyle = '#58a6ff';
+            tCtx.lineWidth = 2;
+            hist.forEach((d, i) => {
+                const x = (i / (hist.length - 1)) * trendCanvas.width;
+                const y = trendCanvas.height - (d.total / maxPop) * trendCanvas.height;
+                if (i === 0) tCtx.moveTo(x, y); else tCtx.lineTo(x, y);
+            });
+            tCtx.stroke();
+            
+            const currentX = ((engine.currentYear - 1800) / (2024 - 1800)) * trendCanvas.width;
+            tCtx.fillStyle = 'white';
+            tCtx.fillRect(currentX - 1, 0, 2, trendCanvas.height);
         }
 
         function loop() {
-            if (!isRunning) return; const tpf = engine.fast ? 12 : 1; let d = 0;
+            if (!isRunning) return; 
+            const tpf = engine.isFastMode ? 12 : 1; 
+            let d = 0;
             for(let t=0; t < tpf; t++) d += engine.tick();
             render();
-            ui.tick.innerText = `Tick: ${engine.tickCount} (${d.toFixed(2)}ms)`; ui.year.innerText = engine.year; ui.era.innerText = engine.era;
-            ui.prog.style.width = `${Math.min(100, Math.max(0, (engine.year-1800)/(2024-1800)*100))}%`; if (engine.year >= 2024) ui.prog.style.background = '#238636';
-            ui.pop.innerText = (engine.count * 100).toLocaleString(); ui.age.innerText = engine.avgAge.toFixed(1);
-            ui.rev.innerText = (engine.rev / 1000000).toFixed(1); ui.exp.innerText = (engine.exp / 1000000).toFixed(1);
-            ui.debt.innerText = (engine.debt / 1000000).toFixed(0); ui.treasury.innerText = (engine.treasury / 1000000).toFixed(0) + " M€";
-            ui.treasury.style.color = engine.treasury > 0 ? 'var(--success)' : '#f85149';
-            ui.child.innerText = (engine.classes.child * 100).toLocaleString(); ui.low.innerText = (engine.classes.low * 100).toLocaleString();
-            ui.mid.innerText = (engine.classes.mid * 100).toLocaleString(); ui.high.innerText = (engine.classes.high * 100).toLocaleString();
-            ui.pen.innerText = (engine.classes.pen * 100).toLocaleString();
+            ui.tick.innerText = `Tick: ${engine.tickCount} (${d.toFixed(2)}ms)`; 
+            ui.year.innerText = engine.currentYear; 
+            ui.era.innerText = engine.eraName;
+            const eventEl = document.getElementById('ui-event');
+            if (eventEl) eventEl.innerText = engine.currentEvent || '';
+            ui.prog.style.width = `${Math.min(100, Math.max(0, (engine.currentYear-1800)/(2024-1800)*100))}%`; 
+            if (engine.currentYear >= 2024) ui.prog.style.background = '#238636';
+            ui.pop.innerText = (engine.agentCount * 100).toLocaleString(); 
+            ui.age.innerText = engine.avgAge.toFixed(1);
+            ui.rev.innerText = (engine.monthlyRevenue / 1000000).toFixed(1); 
+            ui.exp.innerText = (engine.monthlyExpenses / 1000000).toFixed(1);
+            ui.debt.innerText = (engine.stateDebt / 1000000).toFixed(0); 
+            ui.treasury.innerText = (engine.stateTreasury / 1000000).toFixed(0) + " M€";
+            ui.treasury.style.color = engine.stateTreasury > 0 ? 'var(--success)' : '#f85149';
+            ui.child.innerText = (engine.classCounts.child * 100).toLocaleString(); 
+            ui.low.innerText = (engine.classCounts.low * 100).toLocaleString();
+            ui.mid.innerText = (engine.classCounts.mid * 100).toLocaleString(); 
+            ui.high.innerText = (engine.classCounts.high * 100).toLocaleString();
+            ui.pen.innerText = (engine.classCounts.pensioner * 100).toLocaleString();
             requestAnimationFrame(loop);
         }
-        resize();
     </script>
 </body>
 </html>

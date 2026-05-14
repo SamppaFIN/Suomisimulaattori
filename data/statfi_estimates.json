@@ -1,0 +1,40 @@
+{
+  "historical_population": [
+    { "year": 1800, "total": 893000, "age_groups": { "0-14": 0.35, "15-64": 0.60, "65+": 0.05 }, "gdp_per_capita_index": 0.05 },
+    { "year": 1820, "total": 1177000, "age_groups": { "0-14": 0.35, "15-64": 0.60, "65+": 0.05 }, "gdp_per_capita_index": 0.06 },
+    { "year": 1840, "total": 1445000, "age_groups": { "0-14": 0.34, "15-64": 0.61, "65+": 0.05 }, "gdp_per_capita_index": 0.07 },
+    { "year": 1860, "total": 1746000, "age_groups": { "0-14": 0.33, "15-64": 0.62, "65+": 0.05 }, "gdp_per_capita_index": 0.09 },
+    { "year": 1880, "total": 2060000, "age_groups": { "0-14": 0.32, "15-64": 0.63, "65+": 0.05 }, "gdp_per_capita_index": 0.12 },
+    { "year": 1900, "total": 2655000, "age_groups": { "0-14": 0.31, "15-64": 0.64, "65+": 0.05 }, "gdp_per_capita_index": 0.20 },
+    { "year": 1920, "total": 3147000, "age_groups": { "0-14": 0.30, "15-64": 0.65, "65+": 0.05 }, "gdp_per_capita_index": 0.28 },
+    { "year": 1940, "total": 3695000, "age_groups": { "0-14": 0.28, "15-64": 0.66, "65+": 0.06 }, "gdp_per_capita_index": 0.35 },
+    { "year": 1960, "total": 4446000, "age_groups": { "0-14": 0.30, "15-64": 0.63, "65+": 0.07 }, "gdp_per_capita_index": 0.50 },
+    { "year": 1980, "total": 4787000, "age_groups": { "0-14": 0.20, "15-64": 0.68, "65+": 0.12 }, "gdp_per_capita_index": 0.75 },
+    { "year": 2000, "total": 5181000, "age_groups": { "0-14": 0.18, "15-64": 0.67, "65+": 0.15 }, "gdp_per_capita_index": 0.90 },
+    { "year": 2024, "total": 5603000, "age_groups": { "0-14": 0.14, "15-64": 0.62, "65+": 0.24 }, "gdp_per_capita_index": 1.00 }
+  ],
+  "regional_distribution": [
+    { "name": "Helsinki", "x": 230, "y": 1120, "shares": { "1800": 0.05, "1900": 0.15, "2024": 0.25 }, "radius": 40 },
+    { "name": "Espoo", "x": 200, "y": 1115, "shares": { "1800": 0.01, "1900": 0.02, "2024": 0.10 }, "radius": 35 },
+    { "name": "Vantaa", "x": 260, "y": 1105, "shares": { "1800": 0.01, "1900": 0.02, "2024": 0.08 }, "radius": 35 },
+    { "name": "Tampere", "x": 230, "y": 1040, "shares": { "1800": 0.01, "1900": 0.05, "2024": 0.08 }, "radius": 45 },
+    { "name": "Turku", "x": 160, "y": 1080, "shares": { "1800": 0.10, "1900": 0.06, "2024": 0.07 }, "radius": 40 },
+    { "name": "Oulu", "x": 300, "y": 590, "shares": { "1800": 0.02, "1900": 0.03, "2024": 0.06 }, "radius": 40 },
+    { "name": "Jyväskylä", "x": 280, "y": 920, "shares": { "1800": 0.01, "1900": 0.02, "2024": 0.05 }, "radius": 30 },
+    { "name": "Kuopio", "x": 360, "y": 850, "shares": { "1800": 0.02, "1900": 0.03, "2024": 0.04 }, "radius": 30 },
+    { "name": "Lahti", "x": 280, "y": 1050, "shares": { "1800": 0.01, "1900": 0.02, "2024": 0.05 }, "radius": 30 },
+    { "name": "Pori", "x": 140, "y": 1020, "shares": { "1800": 0.02, "1900": 0.03, "2024": 0.03 }, "radius": 30 },
+    { "name": "Joensuu", "x": 480, "y": 880, "shares": { "1800": 0.01, "1900": 0.02, "2024": 0.03 }, "radius": 25 },
+    { "name": "Vaasa", "x": 120, "y": 840, "shares": { "1800": 0.03, "1900": 0.03, "2024": 0.03 }, "radius": 30 },
+    { "name": "Rovaniemi", "x": 320, "y": 450, "shares": { "1800": 0.005, "1900": 0.01, "2024": 0.03 }, "radius": 25 }
+  ],
+  "eras": [
+    { "year": 1800, "name": "Suuriruhtinaskunta", "event": "Ruotsin vallan loppu / Venäjän aika alkaa" },
+    { "year": 1860, "name": "Nälkävuodet & Teollistuminen", "event": "Suuri nälänhätä (1867)" },
+    { "year": 1917, "name": "Itsenäistyminen", "event": "Suomi julistautuu itsenäiseksi" },
+    { "year": 1939, "name": "Sotavuodet", "event": "Talvisota & Jatkosota" },
+    { "year": 1945, "name": "Jälleenrakennus", "event": "Suuret ikäluokat syntyvät" },
+    { "year": 1995, "name": "EU-aika & Teknologia", "event": "Suomi liittyy Euroopan unioniin" },
+    { "year": 2024, "name": "Moderni Digiyhteiskunta", "event": "Nykypäivä" }
+  ]
+}

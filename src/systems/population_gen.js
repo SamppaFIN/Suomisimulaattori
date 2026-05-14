@@ -1,70 +1,61 @@
 /**
- * SuomiSimulaattori 1.0 - Population Generator
- * Generates 5.5M agents based on Finnish demographics.
+ * SuomiSimulaattori 2.0 - Population Generator
+ * Generates agents based on historical regional distributions.
  */
 
-export function generateSim(index) {
-    let x, y;
-    let isValid = false;
-    let attempts = 0;
+function gaussianRandom(mean, stdev) {
+    let u = 1 - Math.random(), v = 1 - Math.random();
+    let z = Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v);
+    return z * stdev + mean;
+}
 
-    // Generate coordinates within a Finland-like shape
-    while (!isValid && attempts < 10) {
-        attempts++;
-        // Finland bounding box roughly: X [0, 400], Y [0, 1000]
-        // (0,0) is top (North), (0, 1000) is bottom (South)
-        // Wait, standard map: North is up (Y decrease), South is down (Y increase)
-        // Let's use: Y 0 = Lapland, Y 1000 = Helsinki
+export function createGenerator(dataService) {
+    return function generateSim(index, year) {
+        const regionalData = dataService.getRegionalShares(year);
+        const yearData = dataService.getYearData(year);
         
-        y = Math.random() * 1000;
+        let x, y, isValid = false, attempts = 0;
+        const rHotspot = Math.random();
+        let h = null, cumulative = 0;
         
-        // Dynamic width based on Y to simulate Finland's shape
-        let maxWidth = 200;
-        if (y < 200) maxWidth = 100 + (y / 2); // North (Narrow)
-        else if (y < 500) maxWidth = 200 + ((y-200) / 3); // Middle (Wide)
-        else if (y < 800) maxWidth = 300 - ((y-500) / 2); // South-middle
-        else maxWidth = 150; // South (Narrowing to Helsinki)
-
-        x = (Math.random() - 0.5) * maxWidth + 200; // Center around 200
-
-        // Population density: Bias towards the south (higher Y)
-        const densityBias = Math.pow(y / 1000, 2); // Higher Y = much higher density
-        if (Math.random() < densityBias + 0.1) {
-            isValid = true;
+        for (let item of regionalData) {
+            cumulative += item.share;
+            if (rHotspot < cumulative) {
+                h = item;
+                break;
+            }
         }
-    }
 
-    // Age Distribution (Roughly Finnish age pyramid)
-    let age;
-    const r = Math.random();
-    if (r < 0.20) age = Math.floor(Math.random() * 20); // 0-19
-    else if (r < 0.80) age = Math.floor(Math.random() * 45) + 20; // 20-64
-    else age = Math.floor(Math.random() * 35) + 65; // 65-100
+        while (!isValid && attempts < 50) {
+            attempts++;
+            if (h && Math.random() < 0.9) {
+                x = gaussianRandom(h.x, h.radius * 0.6);
+                y = gaussianRandom(h.y, h.radius * 0.6);
+            } else {
+                x = Math.random() * 600;
+                y = Math.random() * 1200;
+            }
+            // Simple bound check (Finland mask would be better)
+            if (x >= 0 && x <= 600 && y >= 0 && y <= 1200) isValid = true;
+        }
 
-    // Education & Status
-    let education = Math.floor(Math.random() * 4); // 0: None, 1: Basic, 2: Secondary, 3: Higher
-    let status = 1; // Default working
-    if (age < 20) status = 0; // Child
-    else if (age > 65) status = 3; // Retired
-    else if (Math.random() < 0.08) status = 2; // Unemployed
+        if (!isValid) { x = 300; y = 1100; } // Default Helsinki-ish
 
-    // Finances (Base income based on education and age)
-    let income = 0;
-    if (status === 1) {
-        const base = 2000 + (education * 1000);
-        const exp = Math.min(age - 20, 30) * 50;
-        income = base + exp + (Math.random() * 500);
-    } else if (status === 2) {
-        income = 800; // Unemployment benefit
-    } else if (status === 3) {
-        income = 1500; // Pension
-    }
+        // Age Distribution from year data
+        let age;
+        const r = Math.random();
+        if (r < yearData.age_groups["0-14"]) age = Math.floor(Math.random() * 15);
+        else if (r < yearData.age_groups["0-14"] + yearData.age_groups["15-64"]) age = Math.floor(Math.random() * 50) + 15;
+        else age = Math.floor(Math.random() * 35) + 65;
 
-    return {
-        x, y, age, income,
-        savings: Math.random() * 5000 + (age * 100),
-        health: 100 - Math.max(0, age - 50),
-        status,
-        education
+        let education = Math.floor(Math.random() * 4);
+        let status = age < 20 ? 0 : (age > 65 ? 3 : (Math.random() < 0.08 ? 2 : 1));
+        
+        let income = 0;
+        if (status === 1) income = 2000 + (education * 1000) + Math.min(age - 20, 30) * 50 + Math.random() * 500;
+        else if (status === 2) income = 800;
+        else if (status === 3) income = 1500;
+
+        return { x, y, age, income, status, education };
     };
 }
