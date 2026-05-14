@@ -27,140 +27,85 @@
             height: 100vh;
         }
 
-        /* Finnish Flag */
         .flag-container {
-            width: 40px;
-            height: 25px;
-            background: white;
-            position: relative;
-            border: 1px solid rgba(255,255,255,0.1);
-            border-radius: 2px;
-            overflow: hidden;
-            flex-shrink: 0;
+            width: 40px; height: 25px; background: white; position: relative; border: 1px solid rgba(255,255,255,0.1); border-radius: 2px; overflow: hidden; flex-shrink: 0;
         }
-        .flag-blue-v {
-            position: absolute;
-            left: 30%;
-            top: 0;
-            width: 20%;
-            height: 100%;
-            background: var(--suomi-blue);
-        }
-        .flag-blue-h {
-            position: absolute;
-            left: 0;
-            top: 40%;
-            width: 100%;
-            height: 20%;
-            background: var(--suomi-blue);
-        }
+        .flag-blue-v { position: absolute; left: 30%; top: 0; width: 20%; height: 100%; background: var(--suomi-blue); }
+        .flag-blue-h { position: absolute; left: 0; top: 40%; width: 100%; height: 20%; background: var(--suomi-blue); }
 
-        /* Sidebar / Controls */
         #sidebar {
-            width: 350px;
-            background: var(--panel);
-            border-right: 1px solid #30363d;
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-            z-index: 10;
+            width: 350px; background: var(--panel); border-right: 1px solid #30363d; padding: 20px; display: flex; flex-direction: column; gap: 15px; z-index: 10; overflow-y: auto;
         }
 
         h1 { font-size: 1.2rem; font-weight: 800; color: var(--accent); letter-spacing: -0.02em; }
-        .subtitle { font-size: 0.8rem; color: var(--text-dim); margin-top: -15px; }
+        .subtitle { font-size: 0.8rem; color: var(--text-dim); margin-top: -10px; }
 
         .stat-card {
-            background: rgba(0,0,0,0.2);
-            padding: 15px;
-            border-radius: 8px;
-            border: 1px solid #30363d;
+            background: rgba(0,0,0,0.2); padding: 12px; border-radius: 8px; border: 1px solid #30363d;
         }
-        .stat-label { font-size: 0.7rem; text-transform: uppercase; color: var(--text-dim); }
-        .stat-value { font-family: 'JetBrains Mono', monospace; font-size: 1.4rem; font-weight: 600; color: var(--text); }
+        .stat-label { font-size: 0.65rem; text-transform: uppercase; color: var(--text-dim); margin-bottom: 4px; }
+        .stat-value { font-family: 'JetBrains Mono', monospace; font-size: 1.2rem; font-weight: 600; color: var(--text); }
 
-        .control-group { display: flex; flex-direction: column; gap: 10px; }
-        label { font-size: 0.85rem; font-weight: 600; }
+        .control-group { display: flex; flex-direction: column; gap: 5px; }
+        label { font-size: 0.8rem; font-weight: 600; }
         input[type="range"] { width: 100%; accent-color: var(--accent); }
 
         button {
-            background: var(--accent);
-            color: white;
-            border: none;
-            padding: 12px;
-            border-radius: 6px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: filter 0.2s;
+            background: var(--accent); color: white; border: none; padding: 10px; border-radius: 6px; font-weight: 600; cursor: pointer; transition: filter 0.2s;
         }
         button:hover { filter: brightness(1.1); }
         button.secondary { background: #30363d; }
 
-        /* Main View */
-        #viewport {
-            flex: 1;
-            position: relative;
-            background: radial-gradient(circle at center, #1c2128 0%, #0d1117 100%);
-        }
+        #viewport { flex: 1; position: relative; background: radial-gradient(circle at center, #1c2128 0%, #0d1117 100%); }
         canvas { width: 100%; height: 100%; display: block; cursor: crosshair; }
 
-        .overlay {
-            position: absolute;
-            top: 20px; right: 20px;
-            pointer-events: none;
-            text-align: right;
-        }
-        .mode-tag {
-            background: var(--success);
-            color: white;
-            font-size: 0.65rem;
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-weight: 800;
-            text-transform: uppercase;
-        }
+        .overlay { position: absolute; top: 20px; right: 20px; pointer-events: none; text-align: right; }
+        .mode-tag { background: var(--success); color: white; font-size: 0.6rem; padding: 3px 6px; border-radius: 4px; font-weight: 800; text-transform: uppercase; }
     </style>
 </head>
 <body>
     <div id="sidebar">
-        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 5px;">
-            <div class="flag-container">
-                <div class="flag-blue-v"></div>
-                <div class="flag-blue-h"></div>
-            </div>
+        <div style="display: flex; align-items: center; gap: 12px;">
+            <div class="flag-container"><div class="flag-blue-v"></div><div class="flag-blue-h"></div></div>
             <h1>SUOMISIMULAATTORI</h1>
         </div>
         <p class="subtitle">Yhteiskuntasimulaatio 1.0</p>
 
         <div class="stat-card" style="border-left: 4px solid var(--accent);">
             <div class="stat-label">Vuosi & Aikakausi</div>
-            <div class="stat-value" id="ui-year" style="font-size: 1.5rem;">1800</div>
-            <div style="font-size: 0.7rem; color: var(--accent); margin-top: 4px; font-weight: 600;" id="ui-era">Suuriruhtinaskunta</div>
-            <!-- Progress Bar for Timeline -->
-            <div style="width: 100%; height: 4px; background: rgba(255,255,255,0.1); border-radius: 2px; margin-top: 10px; overflow: hidden;">
+            <div class="stat-value" id="ui-year">1800</div>
+            <div style="font-size: 0.7rem; color: var(--accent); font-weight: 600;" id="ui-era">Suuriruhtinaskunta</div>
+            <div style="width: 100%; height: 4px; background: rgba(255,255,255,0.1); border-radius: 2px; margin-top: 8px; overflow: hidden;">
                 <div id="ui-progress" style="width: 0%; height: 100%; background: var(--accent); transition: width 0.3s;"></div>
-            </div>
-            <div style="display: flex; justify-content: space-between; font-size: 0.6rem; color: var(--text-dim); margin-top: 4px;">
-                <span>1800</span>
-                <span>2024</span>
             </div>
         </div>
 
         <div class="stat-card">
-            <div class="stat-label">Väestö & Keski-ikä</div>
+            <div class="stat-label">Väestörakenne (Henkilöä)</div>
+            <div style="font-size: 0.7rem; line-height: 1.5;">
+                <span style="color: #a5d6ff;">●</span> Lapset/Opiskelijat: <span id="ui-class-child">0</span><br>
+                <span style="color: #f85149;">●</span> Pienituloiset/Työttömät: <span id="ui-class-low">0</span><br>
+                <span style="color: #58a6ff;">●</span> Keskituloiset: <span id="ui-class-mid">0</span><br>
+                <span style="color: #2ea043;">●</span> Suurituloiset: <span id="ui-class-high">0</span><br>
+                <span style="color: #8b949e;">●</span> Eläkeläiset: <span id="ui-class-pensioner">0</span>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-label">Yhteensä & Keski-ikä</div>
             <div class="stat-value"><span id="ui-population">0</span> (<span id="ui-age">0</span> v)</div>
         </div>
 
         <div class="stat-card">
             <div class="stat-label">Valtion Kassa & Velka</div>
-            <div class="stat-value" id="ui-treasury" style="color: var(--success);">0 €</div>
-            <div style="font-size: 0.7rem; color: #f85149; margin-top: 4px;">Velka: <span id="ui-debt">0</span> M€</div>
+            <div class="stat-value" id="ui-treasury">0 €</div>
+            <div style="font-size: 0.7rem; color: #f85149;">Velka: <span id="ui-debt">0</span> M€</div>
         </div>
 
         <div class="stat-card">
             <div class="stat-label">Talous (kk)</div>
-            <div style="font-size: 0.8rem;">
-                Tulot: <span id="ui-revenue" style="color: var(--success);">0</span> M€<br>
+            <div style="font-size: 0.75rem;">
+                Tulot: <span id="ui-revenue" style="color: var(--success);">0</span> M€ | 
                 Menot: <span id="ui-expenses" style="color: #f85149;">0</span> M€
             </div>
         </div>
@@ -175,7 +120,7 @@
             <input type="range" id="inp-benefits" min="0" max="2000" value="800" step="50">
         </div>
 
-        <div style="margin-top: auto; display: flex; flex-direction: column; gap: 10px;">
+        <div style="margin-top: 10px; display: flex; flex-direction: column; gap: 8px;">
             <button id="btn-run">Käynnistä Simulaatio</button>
             <button id="btn-reset" class="secondary">Nollaa</button>
         </div>
@@ -185,72 +130,14 @@
         <canvas id="mainCanvas"></canvas>
         <div class="overlay">
             <div class="mode-tag">Lightweight Mode (1:100)</div>
-            <div style="font-size: 0.7rem; color: var(--text-dim); margin-top: 5px;" id="ui-tick">Pysäytetty</div>
-            <div style="font-size: 0.6rem; color: var(--accent); margin-top: 5px;">Kelaa: Zoom | Vedä: Pan</div>
+            <div style="font-size: 0.65rem; color: var(--text-dim); margin-top: 4px;" id="ui-tick">Pysäytetty</div>
         </div>
     </div>
 
     <script>
-        // --- CONSOLIDATED LOGIC FOR LIGHTWEIGHT STANDALONE USE ---
-        
-        const MAX_AGENTS_FULL = 5500000;
-        const SCALING_FACTOR_LOCAL = 0.01; 
-
-        // Background Image Support
-        const mapImg = new Image();
-        mapImg.src = 'map.png';
-        let mapLoaded = false;
-        const maskCanvas = document.createElement('canvas');
-        const maskCtx = maskCanvas.getContext('2d', { willReadFrequently: true });
-
-        // Standard World Size for Finland
-        const WORLD_W = 600;
-        const WORLD_H = 1200;
-
-        // Convert relative Gemini coordinates (0-100) to World coordinates
-        // Note: Gemini Y=100 is North, World Y=0 is North.
-        const relPoints = [
-            [57.21, 99.15], [50.70, 95.73], [46.51, 84.62], [43.26, 86.75], [37.21, 85.90],
-            [33.95, 91.45], [30.70, 89.74], [41.86, 78.63], [41.86, 63.25], [50.23, 50.85],
-            [38.14, 40.17], [36.28, 35.04], [32.56, 34.19], [30.23, 29.06], [32.56, 19.23],
-            [30.70, 9.40], [36.28, 8.12], [35.81, 14.70], [38.14, 6.41], [39.07, 2.99],
-            [61.86, 9.40], [78.14, 32.48], [70.23, 40.17], [72.56, 44.02], [67.44, 51.28],
-            [68.84, 59.40], [63.26, 69.66], [66.51, 77.35], [60.47, 82.48], [62.33, 94.87]
-        ];
-        const FINLAND_POINTS = relPoints.map(p => [
-            p[0] * (WORLD_W / 100),
-            (100 - p[1]) * (WORLD_H / 100)
-        ]);
-
-        mapImg.onload = () => {
-            mapLoaded = true;
-            maskCanvas.width = WORLD_W; 
-            maskCanvas.height = WORLD_H;
-            maskCtx.drawImage(mapImg, 0, 0, WORLD_W, WORLD_H);
-            
-            engine.initPopulation(generateSim);
-            uiPop.innerText = (engine.agentCount * 100).toLocaleString();
-            
-            // Initial view setup
-            const rect = canvas.getBoundingClientRect();
-            view.zoom = Math.min(rect.width / WORLD_W, rect.height / WORLD_H) * 0.85;
-            view.x = rect.width / 2 - (WORLD_W / 2 * view.zoom);
-            view.y = rect.height / 2 - (WORLD_H / 2 * view.zoom);
-            
-            render();
-            // Force a second render after a tiny delay to ensure PNG is displayed
-            setTimeout(() => { render(); }, 100);
-        };
-
-        function isInsideMask(x, y) {
-            if (!mapLoaded) return true; 
-            const ix = Math.floor(x);
-            const iy = Math.floor(y);
-            if (ix < 0 || ix >= WORLD_W || iy < 0 || iy >= WORLD_H) return false;
-            
-            const pixel = maskCtx.getImageData(ix, iy, 1, 1).data;
-            return pixel[0] > 50 || pixel[1] > 50 || pixel[2] > 50; // Lower threshold
-        }
+        const MAX_AGENTS_FULL = 5500000, SCALING_FACTOR = 0.01, WORLD_W = 600, WORLD_H = 1200;
+        const mapImg = new Image(); mapImg.src = 'map.png'; let mapLoaded = false;
+        const maskCanvas = document.createElement('canvas'), maskCtx = maskCanvas.getContext('2d', { willReadFrequently: true });
 
         const HOTSPOTS = [
             { x: 230, y: 1120, weight: 0.38, name: 'Helsinki', radius: 60 },
@@ -266,417 +153,173 @@
             { x: 180, y: 970, weight: 0.01, name: 'Maarianhamina', radius: 20 }
         ];
 
-        // Gaussian random helper for natural-looking clusters
-        function gaussianRandom(mean, stdev) {
-            let u = 1 - Math.random(); 
-            let v = 1 - Math.random();
-            let z = Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v);
-            return z * stdev + mean;
-        }
-
-        function generateSim(index) {
-            let x, y;
-            let isValid = false;
-            let attempts = 0;
-
-            const rHotspot = Math.random();
-            let h = null;
-            let cumulative = 0;
-            for (let item of HOTSPOTS) {
-                cumulative += item.weight;
-                if (rHotspot < cumulative) {
-                    h = item;
-                    break;
-                }
-            }
-
-            while (!isValid && attempts < 200) {
-                attempts++;
-                if (h && Math.random() < 0.9) {
-                    x = gaussianRandom(h.x, h.radius * 0.6);
-                    y = gaussianRandom(h.y, h.radius * 0.6);
-                } else {
-                    x = Math.random() * WORLD_W;
-                    y = Math.random() * WORLD_H;
-                }
-
-                if (isInsideMask(x, y)) {
-                    isValid = true;
-                }
-            }
-            
-            if (!isValid) { x = 300; y = 1160; }
-            let age;
-            const r = Math.random();
-            if (r < 0.20) age = Math.floor(Math.random() * 20);
-            else if (r < 0.80) age = Math.floor(Math.random() * 45) + 20;
-            else age = Math.floor(Math.random() * 35) + 65;
-            let education = Math.floor(Math.random() * 4);
-            let status = 1;
-            if (age < 20) status = 0;
-            else if (age > 65) status = 3;
-            else if (Math.random() < 0.08) status = 2;
-            let income = 0;
-            if (status === 1) {
-                const base = 2000 + (education * 1000);
-                const exp = Math.min(age - 20, 30) * 50;
-                income = base + exp + (Math.random() * 500);
-            } else if (status === 2) income = 800;
-            else if (status === 3) income = 1500;
-            return { x, y, age, income, savings: Math.random() * 5000 + (age * 100), health: 100 - Math.max(0, age - 50), status, education };
-        }
-
         const HISTORICAL_DATA = [
             { year: 1800, pop: 0.8, gdpMul: 0.05, status: "Autonomian aika alkaa" },
-            { year: 1860, pop: 1.7, gdpMul: 0.10, status: "Nälkävuodet / Teollistuminen alkaa" },
-            { year: 1900, pop: 2.6, gdpMul: 0.20, status: "Sortokaudet / Kansallinen herääminen" },
+            { year: 1860, pop: 1.7, gdpMul: 0.10, status: "Nälkävuodet / Teollistuminen" },
+            { year: 1900, pop: 2.6, gdpMul: 0.20, status: "Kansallinen herääminen" },
             { year: 1917, pop: 3.1, gdpMul: 0.25, status: "Itsenäistyminen" },
             { year: 1945, pop: 3.8, gdpMul: 0.35, status: "Jälleenrakennus" },
-            { year: 1970, pop: 4.6, gdpMul: 0.60, status: "Hyvinvointivaltion rakennus" },
-            { year: 1995, pop: 5.1, gdpMul: 0.85, status: "Nokia-buumi / EU-jäsenyys" },
+            { year: 1970, pop: 4.6, gdpMul: 0.60, status: "Hyvinvointivaltio" },
+            { year: 1995, pop: 5.1, gdpMul: 0.85, status: "Nokia-buumi / EU" },
             { year: 2024, pop: 5.6, gdpMul: 1.00, status: "Nykyhetki" }
         ];
 
-        class SimulationEngine {
-            constructor(isLightweight = true) {
-                this.isLightweight = isLightweight;
-                this.maxAgents = isLightweight ? Math.floor(MAX_AGENTS_FULL * SCALING_FACTOR_LOCAL) : MAX_AGENTS_FULL;
-                this.agentCount = 0;
-                this.buffer = new ArrayBuffer(this.maxAgents * 40); 
-                this.x = new Float32Array(this.buffer, 0, this.maxAgents);
-                this.y = new Float32Array(this.buffer, this.maxAgents * 4, this.maxAgents);
-                this.age = new Uint8Array(this.buffer, this.maxAgents * 8, this.maxAgents);
-                this.income = new Float32Array(this.buffer, this.maxAgents * 9, this.maxAgents);
-                this.savings = new Float32Array(this.buffer, this.maxAgents * 13, this.maxAgents);
-                this.health = new Uint8Array(this.buffer, this.maxAgents * 17, this.maxAgents);
-                this.status = new Uint8Array(this.buffer, this.maxAgents * 18, this.maxAgents);
-                this.education = new Uint8Array(this.buffer, this.maxAgents * 19, this.maxAgents);
-                
-                this.currentYear = 1800;
-                this.eraName = "Suuriruhtinaskunta";
-                this.taxRate = 0.05; // Historically lower
-                this.benefitAmount = 0;
-                this.stateTreasury = 100000;
-                this.stateDebt = 0;
-                this.monthlyGdp = 0;
-                this.monthlyRevenue = 0;
-                this.monthlyExpenses = 0;
-                this.avgAge = 0;
-                this.tickCount = 0;
-                this.isPaused = true;
-                this.isHistoryMode = true;
-            }
-
-            initPopulation(generator) {
-                // Initialize with 1800 population level
-                const targetPop = Math.floor(this.maxAgents * (0.8 / 5.6));
-                let totalAge = 0;
-                for (let i = 0; i < targetPop; i++) {
-                    const data = generator(i);
-                    this.x[i] = data.x; this.y[i] = data.y; this.age[i] = data.age;
-                    this.income[i] = data.income * 0.05; 
-                    this.savings[i] = data.savings * 0.05;
-                    this.health[i] = data.health; this.status[i] = data.status;
-                    this.education[i] = data.education;
-                    totalAge += data.age;
-                }
-                this.agentCount = targetPop;
-                this.avgAge = totalAge / targetPop;
-            }
-
-            tick() {
-                if (this.isPaused) return 0;
-                const start = performance.now();
-                
-                // --- Year Progression (1 tick = 1 month) ---
-                this.tickCount++;
-                if (this.tickCount % 12 === 0) {
-                    this.currentYear++;
-                    this.updateEra();
-                }
-
-                let currentGdp = 0;
-                let currentTaxRevenue = 0;
-                let currentBenefitSpending = 0;
-                let totalAge = 0;
-
-                // Process active agents
-                for (let i = 0; i < this.agentCount; i++) {
-                    // Aging
-                    if (this.tickCount % 12 === 0) {
-                        this.age[i]++;
-                        if (this.age[i] > (this.isHistoryMode ? 60 : 80) && Math.random() < 0.05) {
-                            this.resetAgent(i); 
-                        }
-                    }
-                    totalAge += this.age[i];
-
-                    // Income (Simplified historical scaling)
-                    let monthlyIncome = this.income[i];
-                    if (this.status[i] === 1) {
-                        const tax = monthlyIncome * this.taxRate;
-                        currentTaxRevenue += tax;
-                        this.savings[i] += (monthlyIncome - tax) * 0.05;
-                        currentGdp += monthlyIncome;
-                    } else if (this.status[i] === 2 || this.status[i] === 3) {
-                        currentBenefitSpending += this.benefitAmount;
-                    }
-                }
-
-                this.avgAge = totalAge / (this.agentCount || 1);
-
-                // --- History Mode Population Growth ---
-                if (this.isHistoryMode && this.currentYear < 2024) {
-                    this.handleHistoryGrowth();
-                } else if (this.currentYear >= 2024) {
-                    this.isHistoryMode = false;
-                }
-
-                // Financials (scaled 1:100)
-                this.monthlyRevenue = currentTaxRevenue * 100;
-                this.monthlyExpenses = currentBenefitSpending * 100;
-                
-                const balance = this.monthlyRevenue - this.monthlyExpenses;
-                if (balance < 0) {
-                    if (this.stateTreasury > 0) {
-                        this.stateTreasury += balance;
-                        if (this.stateTreasury < 0) {
-                            this.stateDebt += Math.abs(this.stateTreasury);
-                            this.stateTreasury = 0;
-                        }
-                    } else {
-                        this.stateDebt += Math.abs(balance);
-                    }
-                } else {
-                    this.stateTreasury += balance;
-                    // Try to pay back debt
-                    if (this.stateDebt > 0) {
-                        const payment = Math.min(this.stateDebt, this.stateTreasury * 0.1);
-                        this.stateDebt -= payment;
-                        this.stateTreasury -= payment;
-                    }
-                }
-
-                this.monthlyGdp = currentGdp * 100;
-                
-                return performance.now() - start;
-            }
-
-            updateEra() {
-                const era = HISTORICAL_DATA.findLast(d => d.year <= this.currentYear);
-                if (era) {
-                    this.eraName = era.status;
-                    if (this.isHistoryMode) {
-                        // Slowly increase tax and benefits as society modernizes
-                        if (this.currentYear > 1950) {
-                            this.taxRate = Math.min(0.25, 0.05 + (this.currentYear - 1950) * 0.005);
-                            this.benefitAmount = Math.min(800, (this.currentYear - 1950) * 15);
-                        }
-                    }
-                }
-            }
-
-            handleHistoryGrowth() {
-                const era = HISTORICAL_DATA.findLast(d => d.year <= this.currentYear);
-                const nextEra = HISTORICAL_DATA.find(d => d.year > this.currentYear) || era;
-                
-                // Interpolate target population
-                const t = (this.currentYear - era.year) / (nextEra.year - era.year || 1);
-                const targetPopRatio = era.pop + t * (nextEra.pop - era.pop);
-                const targetCount = Math.floor(this.maxAgents * (targetPopRatio / 5.6));
-                
-                // Add new agents to match growth
-                while (this.agentCount < targetCount && this.agentCount < this.maxAgents) {
-                    const i = this.agentCount;
-                    const data = generateSim(i);
-                    this.x[i] = data.x; this.y[i] = data.y; this.age[i] = 0;
-                    this.income[i] = data.income * era.gdpMul;
-                    this.savings[i] = 0;
-                    this.health[i] = 100;
-                    this.status[i] = 0;
-                    this.agentCount++;
-                }
-            }
-
-            resetAgent(i) {
-                this.age[i] = 0;
-                this.health[i] = 100;
-                this.savings[i] = 0;
-                this.status[i] = 0; 
-                this.education[i] = 0;
-                this.income[i] = (2000 + Math.random() * 2000) * (HISTORICAL_DATA.findLast(d => d.year <= this.currentYear).gdpMul);
-            }
+        function gaussianRandom(m, s) { let u = 1 - Math.random(), v = 1 - Math.random(); return (Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v)) * s + m; }
+        function isInsideMask(x, y) {
+            if (!mapLoaded) return true;
+            const ix = Math.floor(x), iy = Math.floor(y);
+            if (ix < 0 || ix >= WORLD_W || iy < 0 || iy >= WORLD_H) return false;
+            const pixel = maskCtx.getImageData(ix, iy, 1, 1).data;
+            return pixel[0] > 50 || pixel[1] > 50 || pixel[2] > 50;
         }
 
-        // --- APP LOGIC ---
+        function generateSim(i) {
+            let x, y, valid = false, att = 0;
+            const rh = Math.random(); let h = null, cum = 0;
+            for (let item of HOTSPOTS) { cum += item.weight; if (rh < cum) { h = item; break; } }
+            while (!valid && att < 100) {
+                att++; x = h && Math.random() < 0.9 ? gaussianRandom(h.x, h.radius * 0.6) : Math.random() * WORLD_W;
+                y = h && Math.random() < 0.9 ? gaussianRandom(h.y, h.radius * 0.6) : Math.random() * WORLD_H;
+                if (isInsideMask(x, y)) valid = true;
+            }
+            if (!valid) { x = 300; y = 1160; }
+            let age, r = Math.random();
+            if (r < 0.2) age = Math.floor(Math.random() * 20); else if (r < 0.8) age = Math.floor(Math.random() * 45) + 20; else age = Math.floor(Math.random() * 35) + 65;
+            let ed = Math.floor(Math.random() * 4), st = age < 20 ? 0 : (age > 65 ? 3 : (Math.random() < 0.08 ? 2 : 1));
+            let inc = st === 1 ? 2000 + (ed * 1000) + Math.min(age-20, 30)*50 + Math.random()*500 : (st === 2 ? 800 : 1500);
+            return { x, y, age, inc, st };
+        }
 
-        const engine = new SimulationEngine(true); 
-        const canvas = document.getElementById('mainCanvas');
-        const ctx = canvas.getContext('2d');
+        class SimulationEngine {
+            constructor() {
+                this.max = Math.floor(MAX_AGENTS_FULL * SCALING); this.count = 0;
+                this.buffer = new ArrayBuffer(this.max * 32);
+                this.x = new Float32Array(this.buffer, 0, this.max); this.y = new Float32Array(this.buffer, this.max*4, this.max);
+                this.age = new Uint8Array(this.buffer, this.max*8, this.max); this.inc = new Float32Array(this.buffer, this.max*9, this.max);
+                this.st = new Uint8Array(this.buffer, this.max*13, this.max);
+                this.year = 1800; this.era = "Suuriruhtinaskunta"; this.tax = 0.05; this.ben = 0;
+                this.treasury = 100000; this.debt = 0; this.rev = 0; this.exp = 0; this.avgAge = 0; this.tickCount = 0;
+                this.paused = true; this.history = true; this.fast = false;
+                this.classes = { child: 0, low: 0, mid: 0, high: 0, pen: 0 };
+            }
+            init(gen) {
+                this.count = Math.floor(this.max * (0.8 / 5.6)); let sumAge = 0;
+                for (let i = 0; i < this.count; i++) {
+                    const d = gen(i); this.x[i] = d.x; this.y[i] = d.y; this.age[i] = d.age; this.inc[i] = d.inc * 0.05; this.st[i] = d.st; sumAge += d.age;
+                }
+                this.avgAge = sumAge / this.count;
+            }
+            tick() {
+                if (this.paused) return 0; const start = performance.now();
+                this.tickCount++; if (this.tickCount % 12 === 0) { this.year++; this.updateEra(); }
+                let curRev = 0, curExp = 0, sumAge = 0; this.classes = { child: 0, low: 0, mid: 0, high: 0, pen: 0 };
+                for (let i = 0; i < this.count; i++) {
+                    if (this.tickCount % 12 === 0) { this.age[i]++; if (this.age[i] > (this.history ? 60 : 80) && Math.random() < 0.05) this.reset(i); }
+                    sumAge += this.age[i];
+                    if (this.age[i] < 20) this.classes.child++;
+                    else if (this.age[i] > 65) { this.classes.pen++; curExp += 1500; }
+                    else {
+                        if (this.st[i] === 1) {
+                            let tax = this.inc[i] * this.tax; curRev += tax;
+                            if (this.inc[i] < 2000) this.classes.low++; else if (this.inc[i] < 4500) this.classes.mid++; else this.classes.high++;
+                        } else { curExp += this.ben; this.classes.low++; }
+                    }
+                }
+                this.avgAge = sumAge / (this.count || 1);
+                if (this.history && this.year < 2024) this.grow(); else if (this.year >= 2024) this.history = false;
+                this.rev = curRev * 100; this.exp = curExp * 100; let bal = this.rev - this.exp;
+                if (bal < 0) { if (this.treasury > 0) { this.treasury += bal; if (this.treasury < 0) { this.debt += Math.abs(this.treasury); this.treasury = 0; } } else this.debt += Math.abs(bal); }
+                else { this.treasury += bal; if (this.debt > 0) { let p = Math.min(this.debt, this.treasury * 0.1); this.debt -= p; this.treasury -= p; } }
+                return performance.now() - start;
+            }
+            updateEra() {
+                const e = HISTORICAL_DATA.findLast(d => d.year <= this.year);
+                if (e) { this.era = e.status; if (this.history && this.year > 1950) { this.tax = Math.min(0.25, 0.05 + (this.year - 1950) * 0.005); this.ben = Math.min(800, (this.year - 1950) * 15); } }
+            }
+            grow() {
+                const e = HISTORICAL_DATA.findLast(d => d.year <= this.year), n = HISTORICAL_DATA.find(d => d.year > this.year) || e;
+                const t = (this.year - e.year) / (n.year - e.year || 1);
+                const target = Math.floor(this.max * ((e.pop + t * (n.pop - e.pop)) / 5.6));
+                while (this.count < target && this.count < this.max) {
+                    const i = this.count; const d = generateSim(i); this.x[i] = d.x; this.y[i] = d.y; this.age[i] = 0; this.inc[i] = d.inc * e.gdpMul; this.st[i] = 0; this.count++;
+                }
+            }
+            reset(i) { this.age[i] = 0; this.st[i] = 0; this.inc[i] = (2000 + Math.random()*2000) * (HISTORICAL_DATA.findLast(d => d.year <= this.year).gdpMul); }
+        }
 
-        const view = { x: 0, y: 0, zoom: 0.5, isDragging: false, lastMouse: { x: 0, y: 0 } };
-
-        const uiPop = document.getElementById('ui-population');
-        const uiAge = document.getElementById('ui-age');
-        const uiRevenue = document.getElementById('ui-revenue');
-        const uiExpenses = document.getElementById('ui-expenses');
-        const uiDebt = document.getElementById('ui-debt');
-        const uiTreasury = document.getElementById('ui-treasury');
-        const uiYear = document.getElementById('ui-year');
-        const uiEra = document.getElementById('ui-era');
-        const uiProgress = document.getElementById('ui-progress');
-        const uiTick = document.getElementById('ui-tick');
-        const btnRun = document.getElementById('btn-run');
-        const btnReset = document.getElementById('btn-reset');
-        
-        const inpTax = document.getElementById('inp-tax');
-        const valTax = document.getElementById('val-tax');
-        const inpBenefits = document.getElementById('inp-benefits');
-        const valBenefits = document.getElementById('val-benefits');
-
-        inpTax.oninput = () => {
-            engine.taxRate = inpTax.value / 100;
-            valTax.innerText = inpTax.value;
+        const engine = new SimulationEngine();
+        const canvas = document.getElementById('mainCanvas'), ctx = canvas.getContext('2d');
+        const view = { x: 0, y: 0, zoom: 0.5, drag: false, lastM: { x: 0, y: 0 } };
+        const ui = {
+            pop: document.getElementById('ui-population'), age: document.getElementById('ui-age'), rev: document.getElementById('ui-revenue'), exp: document.getElementById('ui-expenses'), debt: document.getElementById('ui-debt'), treasury: document.getElementById('ui-treasury'), year: document.getElementById('ui-year'), era: document.getElementById('ui-era'), prog: document.getElementById('ui-progress'), tick: document.getElementById('ui-tick'), child: document.getElementById('ui-class-child'), low: document.getElementById('ui-class-low'), mid: document.getElementById('ui-class-mid'), high: document.getElementById('ui-class-high'), pen: document.getElementById('ui-class-pensioner')
         };
+        const btnRun = document.getElementById('btn-run'), btnReset = document.getElementById('btn-reset'), inpTax = document.getElementById('inp-tax'), valTax = document.getElementById('val-tax'), inpBen = document.getElementById('inp-benefits'), valBen = document.getElementById('val-benefits');
 
-        inpBenefits.oninput = () => {
-            engine.benefitAmount = parseInt(inpBenefits.value);
-            valBenefits.innerText = inpBenefits.value;
+        inpTax.oninput = () => { engine.tax = inpTax.value / 100; valTax.innerText = inpTax.value; };
+        inpBen.oninput = () => { engine.ben = parseInt(inpBen.value); valBen.innerText = inpBen.value; };
+
+        mapImg.onload = () => {
+            mapLoaded = true; maskCanvas.width = WORLD_W; maskCanvas.height = WORLD_H; maskCtx.drawImage(mapImg, 0, 0, WORLD_W, WORLD_H);
+            engine.init(generateSim); resize();
         };
 
         function resize() {
-            canvas.width = canvas.clientWidth;
-            canvas.height = canvas.clientHeight;
-            if (view.x === 0) {
-                const rect = canvas.getBoundingClientRect();
-                view.zoom = Math.min(rect.width / WORLD_W, rect.height / WORLD_H) * 0.9;
-                view.x = rect.width / 2 - (WORLD_W / 2 * view.zoom);
-                view.y = rect.height / 2 - (WORLD_H / 2 * view.zoom);
-            }
+            canvas.width = canvas.clientWidth; canvas.height = canvas.clientHeight;
+            if (view.x === 0) { const r = canvas.getBoundingClientRect(); view.zoom = Math.min(r.width / WORLD_W, r.height / WORLD_H) * 0.85; view.x = r.width/2 - (WORLD_W/2*view.zoom); view.y = r.height/2 - (WORLD_H/2*view.zoom); }
             render();
         }
-        window.addEventListener('resize', resize);
-        resize();
-
-        canvas.addEventListener('mousedown', (e) => {
-            view.isDragging = true;
-            view.lastMouse = { x: e.clientX, y: e.clientY };
-        });
-        window.addEventListener('mouseup', () => view.isDragging = false);
-        window.addEventListener('mousemove', (e) => {
-            if (view.isDragging) {
-                view.x += e.clientX - view.lastMouse.x;
-                view.y += e.clientY - view.lastMouse.y;
-                view.lastMouse = { x: e.clientX, y: e.clientY };
-                if (!isRunning) render();
-            }
-        });
-        canvas.addEventListener('wheel', (e) => {
-            e.preventDefault();
-            const oldZoom = view.zoom;
-            view.zoom *= (1 + (-e.deltaY * 0.001));
-            view.zoom = Math.max(0.1, Math.min(view.zoom, 100)); 
-            const rect = canvas.getBoundingClientRect();
-            const mouseX = e.clientX - rect.left;
-            const mouseY = e.clientY - rect.top;
-            view.x -= (mouseX - view.x) * (view.zoom / oldZoom - 1);
-            view.y -= (mouseY - view.y) * (view.zoom / oldZoom - 1);
+        window.onresize = resize;
+        canvas.onmousedown = (e) => { view.drag = true; view.lastM = { x: e.clientX, y: e.clientY }; };
+        window.onmouseup = () => view.drag = false;
+        window.onmousemove = (e) => { if (view.drag) { view.x += e.clientX - view.lastM.x; view.y += e.clientY - view.lastM.y; view.lastM = { x: e.clientX, y: e.clientY }; if (!isRunning) render(); } };
+        canvas.onwheel = (e) => {
+            e.preventDefault(); const old = view.zoom; view.zoom = Math.max(0.1, Math.min(view.zoom * (1 + (-e.deltaY * 0.001)), 100));
+            const r = canvas.getBoundingClientRect(), mx = e.clientX - r.left, my = e.clientY - r.top;
+            view.x -= (mx - view.x) * (view.zoom / old - 1); view.y -= (my - view.y) * (view.zoom / old - 1);
             if (!isRunning) render();
-        }, { passive: false });
-
-        engine.initPopulation(generateSim);
-        uiPop.innerText = (engine.agentCount * 100).toLocaleString();
+        };
 
         let isRunning = false;
-        btnRun.onclick = () => {
-            isRunning = !isRunning;
-            engine.isPaused = !isRunning;
-            btnRun.innerText = isRunning ? 'Pysäytä Simulaatio' : 'Jatka Simulaatiota';
-            if (isRunning) requestAnimationFrame(loop);
-        };
+        btnRun.onclick = () => { isRunning = !isRunning; engine.paused = !isRunning; btnRun.innerText = isRunning ? 'Pysäytä' : 'Jatka'; if (isRunning) requestAnimationFrame(loop); };
         btnReset.onclick = () => location.reload();
 
-        const btnFast = document.createElement('button');
-        btnFast.innerText = '⏩ Pikakelaa Historiaa (10x)';
-        btnFast.className = 'secondary';
-        btnFast.style.marginTop = '10px';
-        btnFast.style.borderColor = 'var(--accent)';
-        btnFast.onclick = () => {
-            engine.isFastMode = !engine.isFastMode;
-            btnFast.style.background = engine.isFastMode ? 'var(--accent)' : '';
-            btnFast.style.color = engine.isFastMode ? 'white' : '';
-            btnFast.innerText = engine.isFastMode ? '⏸ Pysäytä Pikakelaus' : '⏩ Pikakelaa Historiaa (10x)';
-        };
-        btnReset.parentNode.insertBefore(btnFast, btnReset);
+        const btnF = document.createElement('button'); btnF.innerText = '⏩ Pikakelaa (10x)'; btnF.className = 'secondary'; btnF.style.marginTop = '10px'; btnF.style.borderColor = 'var(--accent)';
+        btnF.onclick = () => { engine.fast = !engine.fast; btnF.style.background = engine.fast ? 'var(--accent)' : ''; btnF.innerText = engine.fast ? '⏸ Pysäytä Kelaus' : '⏩ Pikakelaa (10x)'; };
+        btnReset.parentNode.insertBefore(btnF, btnReset);
 
         function render() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-            
-            if (mapLoaded) {
-                const imgW = WORLD_W * view.zoom; 
-                const imgH = WORLD_H * view.zoom;
-                ctx.globalAlpha = 0.4; 
-                ctx.drawImage(mapImg, view.x, view.y, imgW, imgH);
-                ctx.globalAlpha = 1.0;
-            }
-
-            for (let i = 0; i < engine.agentCount; i++) {
-                const px = engine.x[i] * view.zoom + view.x;
-                const py = engine.y[i] * view.zoom + view.y;
+            if (mapLoaded) { const w = WORLD_W * view.zoom, h = WORLD_H * view.zoom; ctx.globalAlpha = 0.4; ctx.drawImage(mapImg, view.x, view.y, w, h); ctx.globalAlpha = 1.0; }
+            for (let i = 0; i < engine.count; i++) {
+                const px = engine.x[i] * view.zoom + view.x, py = engine.y[i] * view.zoom + view.y;
                 if (px < -5 || px > canvas.width + 5 || py < -5 || py > canvas.height + 5) continue;
-
-                if (engine.status[i] === 0) ctx.fillStyle = '#a5d6ff';
-                else if (engine.status[i] === 2) ctx.fillStyle = '#f85149';
-                else if (engine.status[i] === 3) ctx.fillStyle = '#8b949e';
-                else ctx.fillStyle = '#58a6ff';
-
-                const size = view.zoom > 10 ? 3 : (view.zoom > 5 ? 2 : 1);
-                ctx.fillRect(px, py, size, size);
+                const age = engine.age[i], inc = engine.inc[i], st = engine.st[i];
+                if (age < 20) ctx.fillStyle = '#a5d6ff'; else if (age > 65) ctx.fillStyle = '#8b949e';
+                else { if (st !== 1 || inc < 2000) ctx.fillStyle = '#f85149'; else if (inc < 4500) ctx.fillStyle = '#58a6ff'; else ctx.fillStyle = '#2ea043'; }
+                const s = view.zoom > 10 ? 3 : (view.zoom > 5 ? 2 : 1); ctx.fillRect(px, py, s, s);
             }
-
             if (view.zoom > 1.5) {
-                const fontSize = Math.max(10, 14 / view.zoom);
-                ctx.font = `${fontSize}px Inter`;
-                ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
-                ctx.textAlign = 'left';
-                HOTSPOTS.forEach(h => {
-                    const px = h.x * view.zoom + view.x;
-                    const py = h.y * view.zoom + view.y;
-                    ctx.fillText(h.name, px + 5, py);
-                });
+                const fs = Math.max(10, 14 / view.zoom); ctx.font = `${fs}px Inter`; ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+                HOTSPOTS.forEach(h => { ctx.fillText(h.name, h.x * view.zoom + view.x + 5, h.y * view.zoom + view.y); });
             }
         }
 
         function loop() {
-            if (!isRunning) return;
-            const ticksPerFrame = engine.isFastMode ? 12 : 1;
-            let duration = 0;
-            for(let t=0; t < ticksPerFrame; t++) {
-                duration += engine.tick();
-            }
+            if (!isRunning) return; const tpf = engine.fast ? 12 : 1; let d = 0;
+            for(let t=0; t < tpf; t++) d += engine.tick();
             render();
-            
-            uiTick.innerText = `Tick: ${engine.tickCount} (${duration.toFixed(2)}ms)`;
-            uiYear.innerText = engine.currentYear;
-            uiEra.innerText = engine.eraName;
-            
-            // Update Progress Bar
-            const progress = Math.min(100, Math.max(0, (engine.currentYear - 1800) / (2024 - 1800) * 100));
-            uiProgress.style.width = `${progress}%`;
-            if (engine.currentYear >= 2024) uiProgress.style.background = '#238636';
-
-            uiPop.innerText = (engine.agentCount * 100).toLocaleString();
-            uiAge.innerText = engine.avgAge.toFixed(1);
-            uiRevenue.innerText = (engine.monthlyRevenue / 1000000).toFixed(1);
-            uiExpenses.innerText = (engine.monthlyExpenses / 1000000).toFixed(1);
-            uiDebt.innerText = (engine.stateDebt / 1000000).toFixed(0);
-
-            uiTreasury.innerText = (engine.stateTreasury / 1000000).toFixed(0) + " M€";
-            uiTreasury.style.color = engine.stateTreasury > 0 ? 'var(--success)' : '#f85149';
+            ui.tick.innerText = `Tick: ${engine.tickCount} (${d.toFixed(2)}ms)`; ui.year.innerText = engine.year; ui.era.innerText = engine.era;
+            ui.prog.style.width = `${Math.min(100, Math.max(0, (engine.year-1800)/(2024-1800)*100))}%`; if (engine.year >= 2024) ui.prog.style.background = '#238636';
+            ui.pop.innerText = (engine.count * 100).toLocaleString(); ui.age.innerText = engine.avgAge.toFixed(1);
+            ui.rev.innerText = (engine.rev / 1000000).toFixed(1); ui.exp.innerText = (engine.exp / 1000000).toFixed(1);
+            ui.debt.innerText = (engine.debt / 1000000).toFixed(0); ui.treasury.innerText = (engine.treasury / 1000000).toFixed(0) + " M€";
+            ui.treasury.style.color = engine.treasury > 0 ? 'var(--success)' : '#f85149';
+            ui.child.innerText = (engine.classes.child * 100).toLocaleString(); ui.low.innerText = (engine.classes.low * 100).toLocaleString();
+            ui.mid.innerText = (engine.classes.mid * 100).toLocaleString(); ui.high.innerText = (engine.classes.high * 100).toLocaleString();
+            ui.pen.innerText = (engine.classes.pen * 100).toLocaleString();
             requestAnimationFrame(loop);
         }
-
-        render();
+        resize();
     </script>
 </body>
 </html>
