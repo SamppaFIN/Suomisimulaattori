@@ -173,31 +173,37 @@
         const MAX_AGENTS_FULL = 5500000;
         const SCALING_FACTOR_LOCAL = 0.01; 
 
-        // Ultra-High-Precision Finland Outline (Correcting Southwest/Åland)
+        // Ultra-Precision Finland Outline (Final refinement)
         const FINLAND_POINTS = [
-            [150, 20], [180, 15], [210, 30], [230, 45], [250, 40], [270, 60], [285, 90], 
-            [295, 130], [320, 160], [345, 200], [360, 250], [345, 300], [335, 350], [355, 390],
-            [365, 440], [375, 480], [400, 520], [430, 560], [455, 620], [475, 680], [490, 750],
-            [475, 830], [430, 910], [370, 965], [300, 995], [240, 998], [180, 990], [130, 975],
-            [85, 965], [60, 945], [65, 915], [85, 880], [120, 850], [150, 820], [185, 780],
-            [195, 740], [180, 680], [165, 620], [145, 560], [130, 500], [120, 440], [110, 380],
-            [105, 320], [80, 260], [55, 210], [30, 160], [20, 120], [50, 95], [85, 105],
-            [120, 130], [160, 160], [190, 130], [210, 80], [220, 40]
+            [150, 20], [185, 12], [225, 35], [260, 50], [285, 80], [305, 120], 
+            [325, 170], [350, 210], [365, 260], [350, 310], [340, 360], [365, 410],
+            [375, 470], [405, 530], [440, 580], [465, 650], [485, 730], [500, 810],
+            [480, 890], [420, 950], [350, 985], [270, 998], [190, 995], [130, 980],
+            [90, 960], [65, 935], [75, 890], [105, 855], [140, 810], [175, 760],
+            [190, 710], [180, 660], [160, 610], [140, 550], [125, 490], [115, 430],
+            [105, 370], [90, 310], [65, 260], [45, 210], [25, 150], [15, 100],
+            [45, 85], [80, 100], [120, 125], [165, 155], [195, 125], [215, 75], [220, 30]
         ];
 
         const HOTSPOTS = [
-            { x: 250, y: 975, weight: 0.38, name: 'Helsinki', radius: 40 },
-            { x: 200, y: 885, weight: 0.12, name: 'Tampere', radius: 30 },
-            { x: 125, y: 940, weight: 0.10, name: 'Turku', radius: 30 },
-            { x: 265, y: 560, weight: 0.08, name: 'Oulu', radius: 35 },
-            { x: 360, y: 760, weight: 0.05, name: 'Kuopio', radius: 25 },
-            { x: 220, y: 790, weight: 0.06, name: 'Jyväskylä', radius: 25 },
-            { x: 310, y: 860, weight: 0.04, name: 'Lahti', radius: 20 },
-            { x: 275, y: 260, weight: 0.02, name: 'Rovaniemi', radius: 20 },
-            { x: 420, y: 800, weight: 0.03, name: 'Lappeenranta', radius: 15 },
-            { x: 130, y: 440, weight: 0.02, name: 'Vaasa', radius: 15 },
-            { x: 75, y: 940, weight: 0.01, name: 'Maarianhamina', radius: 10 }
+            { x: 260, y: 975, weight: 0.38, name: 'Helsinki', radius: 45 },
+            { x: 205, y: 885, weight: 0.12, name: 'Tampere', radius: 35 },
+            { x: 135, y: 945, weight: 0.10, name: 'Turku', radius: 35 },
+            { x: 275, y: 565, weight: 0.08, name: 'Oulu', radius: 35 },
+            { x: 375, y: 765, weight: 0.05, name: 'Kuopio', radius: 30 },
+            { x: 235, y: 795, weight: 0.06, name: 'Jyväskylä', radius: 30 },
+            { x: 325, y: 865, weight: 0.04, name: 'Lahti', radius: 25 },
+            { x: 285, y: 265, weight: 0.02, name: 'Rovaniemi', radius: 25 },
+            { x: 440, y: 810, weight: 0.03, name: 'Lappeenranta', radius: 20 },
+            { x: 135, y: 445, weight: 0.02, name: 'Vaasa', radius: 20 },
+            { x: 80, y: 945, weight: 0.01, name: 'Maarianhamina', radius: 15 }
         ];
+
+        // Background Image Support
+        const mapImg = new Image();
+        mapImg.src = 'map.png'; // User should save their image as map.png
+        let mapLoaded = false;
+        mapImg.onload = () => { mapLoaded = true; if(!isRunning) render(); };
 
         function isPointInPolygon(point, polygon) {
             const x = point[0], y = point[1];
@@ -390,7 +396,21 @@
 
         function render() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw background image if loaded
+            if (mapLoaded) {
+                // Adjust image to fit the Finland bounding box roughly
+                // World coordinates are roughly [0, 500] x [0, 1000]
+                const imgW = 500 * view.zoom;
+                const imgH = 1000 * view.zoom;
+                ctx.globalAlpha = 0.3; // Make it subtle
+                ctx.drawImage(mapImg, view.x, view.y, imgW, imgH);
+                ctx.globalAlpha = 1.0;
+            }
+
             drawFinlandGuide();
+
+            // Render agents
             for (let i = 0; i < engine.agentCount; i++) {
                 const px = engine.x[i] * view.zoom + view.x;
                 const py = engine.y[i] * view.zoom + view.y;
