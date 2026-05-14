@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="fi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SuomiSimulaattori 1.0</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0b0e14;
+            --panel: #161b22;
+            --accent: #58a6ff;
+            --text: #c9d1d9;
+            --text-dim: #8b949e;
+            --success: #238636;
+            --suomi-blue: #003580;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            overflow: hidden;
+            display: flex;
+            height: 100vh;
+        }
+
+        /* Finnish Flag */
+        .flag-container {
+            width: 40px;
+            height: 25px;
+            background: white;
+            position: relative;
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 2px;
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+        .flag-blue-v {
+            position: absolute;
+            left: 30%;
+            top: 0;
+            width: 20%;
+            height: 100%;
+            background: var(--suomi-blue);
+        }
+        .flag-blue-h {
+            position: absolute;
+            left: 0;
+            top: 40%;
+            width: 100%;
+            height: 20%;
+            background: var(--suomi-blue);
+        }
+
+        /* Sidebar / Controls */
+        #sidebar {
+            width: 350px;
+            background: var(--panel);
+            border-right: 1px solid #30363d;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            z-index: 10;
+        }
+
+        h1 { font-size: 1.2rem; font-weight: 800; color: var(--accent); letter-spacing: -0.02em; }
+        .subtitle { font-size: 0.8rem; color: var(--text-dim); margin-top: -15px; }
+
+        .stat-card {
+            background: rgba(0,0,0,0.2);
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #30363d;
+        }
+        .stat-label { font-size: 0.7rem; text-transform: uppercase; color: var(--text-dim); }
+        .stat-value { font-family: 'JetBrains Mono', monospace; font-size: 1.4rem; font-weight: 600; color: var(--text); }
+
+        .control-group { display: flex; flex-direction: column; gap: 10px; }
+        label { font-size: 0.85rem; font-weight: 600; }
+        input[type="range"] { width: 100%; accent-color: var(--accent); }
+
+        button {
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: filter 0.2s;
+        }
+        button:hover { filter: brightness(1.1); }
+        button.secondary { background: #30363d; }
+
+        /* Main View */
+        #viewport {
+            flex: 1;
+            position: relative;
+            background: radial-gradient(circle at center, #1c2128 0%, #0d1117 100%);
+        }
+        canvas { width: 100%; height: 100%; display: block; cursor: crosshair; }
+
+        .overlay {
+            position: absolute;
+            top: 20px; right: 20px;
+            pointer-events: none;
+            text-align: right;
+        }
+        .mode-tag {
+            background: var(--success);
+            color: white;
+            font-size: 0.65rem;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-weight: 800;
+            text-transform: uppercase;
+        }
+    </style>
+</head>
+<body>
+    <div id="sidebar">
+        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 5px;">
+            <div class="flag-container">
+                <div class="flag-blue-v"></div>
+                <div class="flag-blue-h"></div>
+            </div>
+            <h1>SUOMISIMULAATTORI</h1>
+        </div>
+        <p class="subtitle">Yhteiskuntasimulaatio 1.0</p>
+
+        <div class="stat-card">
+            <div class="stat-label">Väestö</div>
+            <div class="stat-value" id="ui-population">0</div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-label">GDP /kk</div>
+            <div class="stat-value" id="ui-gdp">0 €</div>
+        </div>
+
+        <div class="control-group">
+            <label>Tulovero: <span id="val-tax">20</span>%</label>
+            <input type="range" id="inp-tax" min="0" max="60" value="20">
+        </div>
+
+        <div class="control-group">
+            <label>Sosiaalietuudet: <span id="val-benefits">800</span>€</label>
+            <input type="range" id="inp-benefits" min="0" max="2000" value="800" step="50">
+        </div>
+
+        <div style="margin-top: auto; display: flex; flex-direction: column; gap: 10px;">
+            <button id="btn-run">Käynnistä Simulaatio</button>
+            <button id="btn-reset" class="secondary">Nollaa</button>
+        </div>
+    </div>
+
+    <div id="viewport">
+        <canvas id="mainCanvas"></canvas>
+        <div class="overlay">
+            <div class="mode-tag">Lightweight Mode (1:100)</div>
+            <div style="font-size: 0.7rem; color: var(--text-dim); margin-top: 5px;" id="ui-tick">Pysäytetty</div>
+            <div style="font-size: 0.6rem; color: var(--accent); margin-top: 5px;">Kelaa: Zoom | Vedä: Pan</div>
+        </div>
+    </div>
+
+    <script>
+        // --- CONSOLIDATED LOGIC FOR LIGHTWEIGHT STANDALONE USE ---
+        
+        const MAX_AGENTS_FULL = 5500000;
+        const SCALING_FACTOR_LOCAL = 0.01; 
+
+        // Ultra-High-Precision Finland Outline (Correcting Southwest/Åland)
+        const FINLAND_POINTS = [
+            [150, 20], [180, 15], [210, 30], [230, 45], [250, 40], [270, 60], [285, 90], 
+            [295, 130], [320, 160], [345, 200], [360, 250], [345, 300], [335, 350], [355, 390],
+            [365, 440], [375, 480], [400, 520], [430, 560], [455, 620], [475, 680], [490, 750],
+            [475, 830], [430, 910], [370, 965], [300, 995], [240, 998], [180, 990], [130, 975],
+            [85, 965], [60, 945], [65, 915], [85, 880], [120, 850], [150, 820], [185, 780],
+            [195, 740], [180, 680], [165, 620], [145, 560], [130, 500], [120, 440], [110, 380],
+            [105, 320], [80, 260], [55, 210], [30, 160], [20, 120], [50, 95], [85, 105],
+            [120, 130], [160, 160], [190, 130], [210, 80], [220, 40]
+        ];
+
+        const HOTSPOTS = [
+            { x: 250, y: 975, weight: 0.38, name: 'Helsinki', radius: 40 },
+            { x: 200, y: 885, weight: 0.12, name: 'Tampere', radius: 30 },
+            { x: 125, y: 940, weight: 0.10, name: 'Turku', radius: 30 },
+            { x: 265, y: 560, weight: 0.08, name: 'Oulu', radius: 35 },
+            { x: 360, y: 760, weight: 0.05, name: 'Kuopio', radius: 25 },
+            { x: 220, y: 790, weight: 0.06, name: 'Jyväskylä', radius: 25 },
+            { x: 310, y: 860, weight: 0.04, name: 'Lahti', radius: 20 },
+            { x: 275, y: 260, weight: 0.02, name: 'Rovaniemi', radius: 20 },
+            { x: 420, y: 800, weight: 0.03, name: 'Lappeenranta', radius: 15 },
+            { x: 130, y: 440, weight: 0.02, name: 'Vaasa', radius: 15 },
+            { x: 75, y: 940, weight: 0.01, name: 'Maarianhamina', radius: 10 }
+        ];
+
+        function isPointInPolygon(point, polygon) {
+            const x = point[0], y = point[1];
+            let inside = false;
+            for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+                const xi = polygon[i][0], yi = polygon[i][1];
+                const xj = polygon[j][0], yj = polygon[j][1];
+                const intersect = ((yi > y) !== (yj > y)) &&
+                    (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
+                if (intersect) inside = !inside;
+            }
+            return inside;
+        }
+
+        // Gaussian random helper for natural-looking clusters
+        function gaussianRandom(mean, stdev) {
+            let u = 1 - Math.random(); 
+            let v = 1 - Math.random();
+            let z = Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v);
+            return z * stdev + mean;
+        }
+
+        function generateSim(index) {
+            let x, y;
+            let isValid = false;
+            let attempts = 0;
+
+            const rHotspot = Math.random();
+            let h = null;
+            let cumulative = 0;
+            for (let item of HOTSPOTS) {
+                cumulative += item.weight;
+                if (rHotspot < cumulative) {
+                    h = item;
+                    break;
+                }
+            }
+
+            while (!isValid && attempts < 50) {
+                attempts++;
+                if (h && Math.random() < 0.85) {
+                    // Sample near hotspot with Gaussian distribution
+                    x = gaussianRandom(h.x, h.radius * 0.5);
+                    y = gaussianRandom(h.y, h.radius * 0.5);
+                } else {
+                    // Random point in bounding box
+                    x = Math.random() * 500;
+                    y = Math.random() * 1000;
+                }
+
+                if (isPointInPolygon([x, y], FINLAND_POINTS)) {
+                    isValid = true;
+                }
+            }
+            
+            // If still not valid after max attempts, force inside a known safe zone (Helsinki)
+            if (!isValid) { x = 235; y = 975; }
+            let age;
+            const r = Math.random();
+            if (r < 0.20) age = Math.floor(Math.random() * 20);
+            else if (r < 0.80) age = Math.floor(Math.random() * 45) + 20;
+            else age = Math.floor(Math.random() * 35) + 65;
+            let education = Math.floor(Math.random() * 4);
+            let status = 1;
+            if (age < 20) status = 0;
+            else if (age > 65) status = 3;
+            else if (Math.random() < 0.08) status = 2;
+            let income = 0;
+            if (status === 1) {
+                const base = 2000 + (education * 1000);
+                const exp = Math.min(age - 20, 30) * 50;
+                income = base + exp + (Math.random() * 500);
+            } else if (status === 2) income = 800;
+            else if (status === 3) income = 1500;
+            return { x, y, age, income, savings: Math.random() * 5000 + (age * 100), health: 100 - Math.max(0, age - 50), status, education };
+        }
+
+        class SimulationEngine {
+            constructor(isLightweight = true) {
+                this.isLightweight = isLightweight;
+                this.maxAgents = isLightweight ? Math.floor(MAX_AGENTS_FULL * SCALING_FACTOR_LOCAL) : MAX_AGENTS_FULL;
+                this.agentCount = 0;
+                this.buffer = new ArrayBuffer(this.maxAgents * 32);
+                this.x = new Float32Array(this.buffer, 0, this.maxAgents);
+                this.y = new Float32Array(this.buffer, this.maxAgents * 4, this.maxAgents);
+                this.age = new Uint8Array(this.buffer, this.maxAgents * 8, this.maxAgents);
+                this.income = new Float32Array(this.buffer, this.maxAgents * 9, this.maxAgents);
+                this.savings = new Float32Array(this.buffer, this.maxAgents * 13, this.maxAgents);
+                this.health = new Uint8Array(this.buffer, this.maxAgents * 17, this.maxAgents);
+                this.status = new Uint8Array(this.buffer, this.maxAgents * 18, this.maxAgents);
+                this.education = new Uint8Array(this.buffer, this.maxAgents * 19, this.maxAgents);
+                this.tickCount = 0;
+                this.isPaused = true;
+            }
+            initPopulation(generator) {
+                for (let i = 0; i < this.maxAgents; i++) {
+                    const data = generator(i);
+                    this.x[i] = data.x; this.y[i] = data.y; this.age[i] = data.age;
+                    this.income[i] = data.income; this.savings[i] = data.savings;
+                    this.health[i] = data.health; this.status[i] = data.status;
+                    this.education[i] = data.education;
+                }
+                this.agentCount = this.maxAgents;
+            }
+            tick() {
+                if (this.isPaused) return 0;
+                const start = performance.now();
+                for (let i = 0; i < this.agentCount; i++) {
+                    if (this.tickCount % 12 === 0) this.age[i]++;
+                    if (this.status[i] === 1) this.savings[i] += this.income[i] * 0.1;
+                }
+                this.tickCount++;
+                return performance.now() - start;
+            }
+        }
+
+        // --- APP LOGIC ---
+
+        const engine = new SimulationEngine(true); 
+        const canvas = document.getElementById('mainCanvas');
+        const ctx = canvas.getContext('2d');
+
+        const view = { x: 0, y: 0, zoom: 0.5, isDragging: false, lastMouse: { x: 0, y: 0 } };
+
+        const uiPop = document.getElementById('ui-population');
+        const uiGdp = document.getElementById('ui-gdp');
+        const uiTick = document.getElementById('ui-tick');
+        const btnRun = document.getElementById('btn-run');
+        const btnReset = document.getElementById('btn-reset');
+
+        function resize() {
+            canvas.width = canvas.clientWidth;
+            canvas.height = canvas.clientHeight;
+            if (view.x === 0) {
+                view.x = canvas.width / 2 - (200 * view.zoom);
+                view.y = 20;
+            }
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        canvas.addEventListener('mousedown', (e) => {
+            view.isDragging = true;
+            view.lastMouse = { x: e.clientX, y: e.clientY };
+        });
+        window.addEventListener('mouseup', () => view.isDragging = false);
+        window.addEventListener('mousemove', (e) => {
+            if (view.isDragging) {
+                view.x += e.clientX - view.lastMouse.x;
+                view.y += e.clientY - view.lastMouse.y;
+                view.lastMouse = { x: e.clientX, y: e.clientY };
+                if (!isRunning) render();
+            }
+        });
+        canvas.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            const oldZoom = view.zoom;
+            view.zoom *= (1 + (-e.deltaY * 0.001));
+            view.zoom = Math.max(0.1, Math.min(view.zoom, 50));
+            const rect = canvas.getBoundingClientRect();
+            const mouseX = e.clientX - rect.left;
+            const mouseY = e.clientY - rect.top;
+            view.x -= (mouseX - view.x) * (view.zoom / oldZoom - 1);
+            view.y -= (mouseY - view.y) * (view.zoom / oldZoom - 1);
+            if (!isRunning) render();
+        }, { passive: false });
+
+        engine.initPopulation(generateSim);
+        uiPop.innerText = (engine.agentCount * 100).toLocaleString();
+
+        let isRunning = false;
+        btnRun.onclick = () => {
+            isRunning = !isRunning;
+            engine.isPaused = !isRunning;
+            btnRun.innerText = isRunning ? 'Pysäytä' : 'Jatka Simulaatiota';
+            if (isRunning) requestAnimationFrame(loop);
+        };
+        btnReset.onclick = () => location.reload();
+
+        function loop() {
+            if (!isRunning) return;
+            const duration = engine.tick();
+            render();
+            uiTick.innerText = `Tick: ${engine.tickCount} (${duration.toFixed(2)}ms)`;
+            let totalIncome = 0;
+            for(let i=0; i<engine.agentCount; i++) if (engine.status[i] === 1) totalIncome += engine.income[i];
+            uiGdp.innerText = (totalIncome * 100 / 1000000).toFixed(1) + " M€";
+            requestAnimationFrame(loop);
+        }
+
+        function render() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawFinlandGuide();
+            for (let i = 0; i < engine.agentCount; i++) {
+                const px = engine.x[i] * view.zoom + view.x;
+                const py = engine.y[i] * view.zoom + view.y;
+                if (px < -5 || px > canvas.width + 5 || py < -5 || py > canvas.height + 5) continue;
+                if (engine.status[i] === 0) ctx.fillStyle = '#a5d6ff';
+                else if (engine.status[i] === 2) ctx.fillStyle = '#f85149';
+                else if (engine.status[i] === 3) ctx.fillStyle = '#8b949e';
+                else ctx.fillStyle = '#58a6ff';
+                const size = view.zoom > 5 ? 2 : 1;
+                ctx.fillRect(px, py, size, size);
+            }
+        }
+
+        function drawFinlandGuide() {
+            if (view.zoom < 0.3) return; // Too small to see
+            
+            ctx.beginPath();
+            ctx.strokeStyle = 'rgba(88, 166, 255, 0.15)';
+            ctx.lineWidth = 1 / view.zoom; // Keep line thin regardless of zoom
+            
+            // Use the polygon points
+            const startX = FINLAND_POINTS[0][0] * view.zoom + view.x;
+            const startY = FINLAND_POINTS[0][1] * view.zoom + view.y;
+            ctx.moveTo(startX, startY);
+            
+            for (let i = 1; i < FINLAND_POINTS.length; i++) {
+                const px = FINLAND_POINTS[i][0] * view.zoom + view.x;
+                const py = FINLAND_POINTS[i][1] * view.zoom + view.y;
+                ctx.lineTo(px, py);
+            }
+            ctx.closePath();
+            ctx.stroke();
+
+            // Draw city labels if zoomed in enough
+            if (view.zoom > 2) {
+                ctx.font = `${10/view.zoom}px Inter`;
+                ctx.fillStyle = 'rgba(88, 166, 255, 0.5)';
+                HOTSPOTS.forEach(h => {
+                    const px = h.x * view.zoom + view.x;
+                    const py = h.y * view.zoom + view.y;
+                    ctx.fillText(h.name, px + 5, py);
+                });
+            }
+        }
+
+        render();
+    </script>
+</body>
+</html>
